@@ -23,19 +23,29 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   @override
   Widget build(BuildContext context) {
+    // 시스템 하단 여백(Safe Area bottom)을 계산합니다.
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
       backgroundColor: AppTheme.ivoryPaper,
       body: Stack(
         children: [
-          // 현재 선택된 화면
-          _screens[_selectedIndex],
+          // 현재 선택된 화면 (하단 바 높이 + 기기 하단 여백만큼 하단에 여백을 줌)
+          Padding(
+            padding: EdgeInsets.only(bottom: 80 + bottomPadding),
+            child: _screens[_selectedIndex],
+          ),
 
           // 하단 커스텀 네비게이션 바
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
-            child: _buildCustomBottomBar(),
+            child: SafeArea(
+              top: false,
+              bottom: true,
+              child: _buildCustomBottomBar(),
+            ),
           ),
         ],
       ),
