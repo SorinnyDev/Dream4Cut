@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'theme/app_theme.dart';
-import 'views/home_view.dart';
+import 'views/main_scaffold.dart';
 
 void main() {
   runApp(const Dream4CutApp());
@@ -15,7 +15,7 @@ class Dream4CutApp extends StatelessWidget {
       title: 'Dream4Cut',
       theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
-      home: const HomeView(),
+      home: const MainScaffold(),
     );
   }
 }
