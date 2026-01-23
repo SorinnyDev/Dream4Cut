@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
+import '../providers/goal_provider.dart';
 import 'home_view.dart';
-import 'stats_view.dart';
+import 'footsteps_view.dart';
 import 'settings_view.dart';
 
 /// 메인 스캐폴드 - 종이 질감 하단 네비게이션 포함
@@ -13,30 +15,27 @@ class MainScaffold extends StatefulWidget {
 }
 
 class _MainScaffoldState extends State<MainScaffold> {
-  int _selectedIndex = 0;
-
   final List<Widget> _screens = [
     const HomeView(),
-    const StatsView(),
+    const FootstepsView(),
     const SettingsView(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    // 시스템 하단 여백(Safe Area bottom)을 계산합니다.
     final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final provider = context.watch<GoalProvider>();
+    final selectedIndex = provider.currentTabIndex;
 
     return Scaffold(
       backgroundColor: AppTheme.ivoryPaper,
       body: Stack(
         children: [
-          // 현재 선택된 화면 (하단 바 높이 + 기기 하단 여백만큼 하단에 여백을 줌)
           Padding(
             padding: EdgeInsets.only(bottom: 80 + bottomPadding),
-            child: _screens[_selectedIndex],
+            child: _screens[selectedIndex],
           ),
 
-          // 하단 커스텀 네비게이션 바
           Positioned(
             left: 0,
             right: 0,
@@ -44,7 +43,7 @@ class _MainScaffoldState extends State<MainScaffold> {
             child: SafeArea(
               top: false,
               bottom: true,
-              child: _buildCustomBottomBar(),
+              child: _buildCustomBottomBar(provider),
             ),
           ),
         ],
@@ -52,8 +51,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     );
   }
 
-  /// 아날로그 감성 커스텀 하단 바
-  Widget _buildCustomBottomBar() {
+  Widget _buildCustomBottomBar(GoalProvider provider) {
     return Container(
       height: 90,
       padding: const EdgeInsets.only(bottom: 10),
@@ -61,7 +59,6 @@ class _MainScaffoldState extends State<MainScaffold> {
         clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
         children: [
-          // 1. 하단 종이 배경 (약간 삐뚤빼뚤한 느낌을 위해 CustomPainter 사용 가능하지만 우선 간단하게)
           Container(
             margin: const EdgeInsets.symmetric(
               horizontal: AppTheme.spacingM,
@@ -79,11 +76,10 @@ class _MainScaffoldState extends State<MainScaffold> {
             ),
           ),
 
-          // 2. 마스킹 테이프 장식 (현재 선택된 탭 강조용)
           AnimatedPositioned(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOutBack,
-            left: _calculateTapePosition(),
+            left: _calculateTapePosition(provider.currentTabIndex),
             bottom: 50,
             child: Transform.rotate(
               angle: -0.05,
@@ -104,7 +100,6 @@ class _MainScaffoldState extends State<MainScaffold> {
             ),
           ),
 
-          // 3. 네비게이션 아이콘들
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingL),
             child: SizedBox(
@@ -113,18 +108,21 @@ class _MainScaffoldState extends State<MainScaffold> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildNavItem(
+                    provider,
                     0,
                     Icons.auto_awesome_mosaic_outlined,
                     Icons.auto_awesome_mosaic,
                     '기록',
                   ),
                   _buildNavItem(
+                    provider,
                     1,
                     Icons.query_stats_outlined,
                     Icons.query_stats_rounded,
                     '발자국',
                   ),
                   _buildNavItem(
+                    provider,
                     2,
                     Icons.inventory_2_outlined,
                     Icons.inventory_2_rounded,
@@ -140,16 +138,17 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   Widget _buildNavItem(
+    GoalProvider provider,
     int index,
     IconData icon,
     IconData activeIcon,
     String label,
   ) {
-    final isSelected = _selectedIndex == index;
+    final isSelected = provider.currentTabIndex == index;
     final color = isSelected ? AppTheme.textPrimary : AppTheme.textTertiary;
 
     return GestureDetector(
-      onTap: () => setState(() => _selectedIndex = index),
+      onTap: () => provider.setTabIndex(index),
       behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -176,11 +175,11 @@ class _MainScaffoldState extends State<MainScaffold> {
     );
   }
 
-  double _calculateTapePosition() {
+  double _calculateTapePosition(int selectedIndex) {
     final screenWidth = MediaQuery.of(context).size.width;
     final itemWidth = (screenWidth - (AppTheme.spacingL * 2)) / 3;
     return AppTheme.spacingL +
-        (itemWidth * _selectedIndex) +
+        (itemWidth * selectedIndex) +
         (itemWidth / 2) -
         20;
   }

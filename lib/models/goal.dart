@@ -1,8 +1,8 @@
+enum GoalStatus { active, completed, archived }
+
 /// Goal 모델 - 목표 데이터 구조
 ///
 /// 횟수 중심의 누적형 목표 관리
-/// - 연도/월 단위 리셋 없음
-/// - 태어나서 지금까지의 누적 시행 횟수 추적
 class Goal {
   final String id;
   final String title;
@@ -10,6 +10,10 @@ class Goal {
   final int totalCount; // 전체 누적 횟수
   final DateTime createdAt;
   final DateTime updatedAt;
+  final GoalStatus status;
+  final int frameIndex; // 0, 1, 2... (PageView의 페이지 인덱스)
+  final int slotIndex; // 0, 1, 2, 3 (1x4 프레임 내 위치)
+  final DateTime? completedAt;
 
   Goal({
     required this.id,
@@ -18,10 +22,13 @@ class Goal {
     required this.totalCount,
     required this.createdAt,
     required this.updatedAt,
+    this.status = GoalStatus.active,
+    this.frameIndex = 0,
+    this.slotIndex = 0,
+    this.completedAt,
   });
 
   /// 현재 인화지 번호 (1-based)
-  /// 예: 0~199회 = 1번, 200~399회 = 2번
   int get currentSheetNumber => (totalCount ~/ 200) + 1;
 
   /// 현재 인화지 내 진행률 (0~200)
@@ -40,6 +47,10 @@ class Goal {
     int? totalCount,
     DateTime? createdAt,
     DateTime? updatedAt,
+    GoalStatus? status,
+    int? frameIndex,
+    int? slotIndex,
+    DateTime? completedAt,
   }) {
     return Goal(
       id: id ?? this.id,
@@ -48,6 +59,10 @@ class Goal {
       totalCount: totalCount ?? this.totalCount,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      status: status ?? this.status,
+      frameIndex: frameIndex ?? this.frameIndex,
+      slotIndex: slotIndex ?? this.slotIndex,
+      completedAt: completedAt ?? this.completedAt,
     );
   }
 
@@ -59,6 +74,10 @@ class Goal {
       'totalCount': totalCount,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'status': status.name,
+      'frameIndex': frameIndex,
+      'slotIndex': slotIndex,
+      'completedAt': completedAt?.toIso8601String(),
     };
   }
 
@@ -70,6 +89,15 @@ class Goal {
       totalCount: json['totalCount'] as int,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+      status: GoalStatus.values.firstWhere(
+        (e) => e.name == (json['status'] ?? 'active'),
+        orElse: () => GoalStatus.active,
+      ),
+      frameIndex: json['frameIndex'] as int? ?? 0,
+      slotIndex: json['slotIndex'] as int? ?? 0,
+      completedAt: json['completedAt'] != null
+          ? DateTime.parse(json['completedAt'] as String)
+          : null,
     );
   }
 
@@ -83,6 +111,6 @@ class Goal {
 
   @override
   String toString() {
-    return 'Goal{id: $id, title: $title, totalCount: $totalCount, currentSheet: $currentSheetNumber}';
+    return 'Goal{id: $id, title: $title, totalCount: $totalCount, status: $status}';
   }
 }

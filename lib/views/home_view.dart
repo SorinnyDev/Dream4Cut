@@ -1,174 +1,247 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/goal.dart';
 import '../theme/app_theme.dart';
+import '../providers/goal_provider.dart';
+import '../widgets/analog_widgets.dart';
 import 'detail_view.dart';
+import 'goal_create_view.dart';
 
-/// 메인 홈 화면 - 1x4 세로 고정 프레임 레이아웃
-class HomeView extends StatelessWidget {
+class HomeView extends StatefulWidget {
   const HomeView({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    // 임시 데이터 (나중에 상태 관리 프레임워크나 DB 연동 가능)
-    final List<Goal> mockGoals = [
-      Goal(
-        id: '1',
-        title: '매일 아침 스트레칭',
-        backgroundTheme: 'pastel_pink',
-        totalCount: 245,
-        createdAt: DateTime.now().subtract(const Duration(days: 30)),
-        updatedAt: DateTime.now(),
-      ),
-      Goal(
-        id: '2',
-        title: '경제/IT 뉴스 읽기',
-        backgroundTheme: 'pastel_blue',
-        totalCount: 88,
-        createdAt: DateTime.now().subtract(const Duration(days: 60)),
-        updatedAt: DateTime.now(),
-      ),
-      Goal(
-        id: '3',
-        title: '물 2L 마시기',
-        backgroundTheme: 'pastel_mint',
-        totalCount: 12,
-        createdAt: DateTime.now().subtract(const Duration(days: 10)),
-        updatedAt: DateTime.now(),
-      ),
-      Goal(
-        id: '4',
-        title: '새로운 목표 추가하기',
-        backgroundTheme: 'pastel_yellow',
-        totalCount: 0,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-    ];
+  State<HomeView> createState() => _HomeViewState();
+}
 
+class _HomeViewState extends State<HomeView> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.ivoryPaper,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingL),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: AppTheme.spacingL),
-              // 상단 타이틀
-              Text(
-                '드림포컷 (Dream4Cut)',
-                style: AppTheme.headingLarge.copyWith(
-                  letterSpacing: 2.0,
-                  color: AppTheme.textPrimary.withOpacity(0.8),
-                ),
-              ),
-              const SizedBox(height: AppTheme.spacingS),
-              Text(
-                '너의 발걸음을 기록해',
-                style: AppTheme.bodySmall.copyWith(
-                  letterSpacing: 1.2,
-                  color: AppTheme.textSecondary,
-                ),
-              ),
-              const SizedBox(height: AppTheme.spacingXl),
+      body: Consumer<GoalProvider>(
+        builder: (context, provider, child) {
+          // Identify used frame indices
+          final maxFrameIndex = provider.activeGoals.isEmpty
+              ? 0
+              : provider.activeGoals
+                    .map((e) => e.frameIndex)
+                    .reduce((a, b) => a > b ? a : b);
 
-              // 1x4 프레임 컨테이너
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(AppTheme.spacingM),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: AppTheme.paperShadow,
-                    borderRadius: BorderRadius.circular(2),
+          final frameCount =
+              maxFrameIndex + 2; // Always show an extra empty frame
+
+          return SafeArea(
+            child: Column(
+              children: [
+                const SizedBox(height: AppTheme.spacingL),
+                Text(
+                  '드림포컷 (Dream4Cut)',
+                  style: AppTheme.headingLarge.copyWith(
+                    letterSpacing: 2.0,
+                    color: AppTheme.textPrimary.withOpacity(0.8),
                   ),
-                  child: Column(
-                    children: List.generate(4, (index) {
-                      final goal = mockGoals[index];
-                      return Expanded(
-                        child: _GoalFrameItem(goal: goal, index: index),
+                ),
+                const SizedBox(height: AppTheme.spacingS),
+                Text(
+                  '나만의 소중한 기록 조각들',
+                  style: AppTheme.bodySmall.copyWith(
+                    letterSpacing: 1.2,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spacingXl),
+
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (index) =>
+                        setState(() => _currentPage = index),
+                    itemCount: frameCount,
+                    itemBuilder: (context, frameIndex) {
+                      return _buildFrame(provider, frameIndex);
+                    },
+                  ),
+                ),
+
+                // Indicators
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppTheme.spacingM,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(frameCount, (index) {
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        width: _currentPage == index ? 12 : 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: _currentPage == index
+                              ? AppTheme.textPrimary
+                              : AppTheme.pencilDash,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       );
                     }),
                   ),
                 ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildFrame(GoalProvider provider, int frameIndex) {
+    final frameGoals = provider.activeGoals
+        .where((g) => g.frameIndex == frameIndex)
+        .toList();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingL),
+      child: Container(
+        padding: const EdgeInsets.all(AppTheme.spacingM),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: AppTheme.paperShadow,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Column(
+          children: List.generate(4, (slotIndex) {
+            final goal = frameGoals.any((g) => g.slotIndex == slotIndex)
+                ? frameGoals.firstWhere((g) => g.slotIndex == slotIndex)
+                : null;
+            return Expanded(
+              child: _GoalFrameItem(
+                goal: goal,
+                frameIndex: frameIndex,
+                slotIndex: slotIndex,
               ),
-              const SizedBox(height: AppTheme.spacingL),
-            ],
-          ),
+            );
+          }),
         ),
       ),
     );
   }
 }
 
-/// 개별 목표 프레임 아이템 (1x4 중 하나)
 class _GoalFrameItem extends StatelessWidget {
-  final Goal goal;
-  final int index;
+  final Goal? goal;
+  final int frameIndex;
+  final int slotIndex;
 
-  const _GoalFrameItem({required this.goal, required this.index});
+  const _GoalFrameItem({
+    this.goal,
+    required this.frameIndex,
+    required this.slotIndex,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (goal == null) {
+      return GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  GoalCreateView(frameIndex: frameIndex, slotIndex: slotIndex),
+            ),
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          decoration: BoxDecoration(
+            color: AppTheme.ivoryPaper,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: AppTheme.pencilDash.withOpacity(0.5),
+              style: BorderStyle.solid,
+            ),
+          ),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.add_photo_alternate_outlined,
+                  color: AppTheme.textTertiary,
+                  size: 30,
+                ),
+                const SizedBox(height: 4),
+                Text('새로운 수집품', style: AppTheme.caption),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final themeIndex = int.tryParse(goal!.backgroundTheme.split('_').last) ?? 0;
+
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final result = await Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => DetailView(goal: goal)),
+          MaterialPageRoute(builder: (context) => DetailView(goal: goal!)),
         );
+        if (result == true && context.mounted) {
+          context.read<GoalProvider>().setTabIndex(1);
+        }
       },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
         decoration: BoxDecoration(
-          color: AppTheme.getPastelColor(index).withOpacity(0.15),
+          color: AppTheme.getPastelColor(themeIndex).withOpacity(0.2),
           borderRadius: BorderRadius.circular(4),
           border: Border.all(color: AppTheme.pencilDash.withOpacity(0.2)),
         ),
         child: Stack(
           children: [
-            // 배경 장식 (모서리에 아날로그 느낌 점선)
             Positioned(
-              right: 12,
-              bottom: 12,
+              right: 8,
+              top: 8,
               child: Opacity(
-                opacity: 0.2,
+                opacity: 0.1,
                 child: Icon(
-                  Icons.auto_awesome,
+                  Icons.stars,
                   size: 40,
-                  color: AppTheme.getPastelColor(index),
+                  color: AppTheme.getPastelColor(themeIndex),
                 ),
               ),
             ),
-
-            // 콘텐츠
             Padding(
               padding: const EdgeInsets.all(AppTheme.spacingM),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    goal.title,
+                    goal!.title,
                     style: AppTheme.headingSmall.copyWith(
                       color: AppTheme.textPrimary,
                     ),
                     textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: AppTheme.spacingS),
-
-                  // 하단 누적 정보
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildInfoBadge('Total', '${goal.totalCount}'),
-                      const SizedBox(width: AppTheme.spacingS),
-                      _buildInfoBadge(
-                        'Progress',
-                        '${goal.currentSheetProgress}/200',
-                      ),
-                    ],
+                    children: [_buildInfoBadge('Stamp', '${goal!.totalCount}')],
                   ),
                 ],
               ),
+            ),
+            const Positioned(
+              left: 10,
+              top: 0,
+              child: MaskingTape(width: 40, height: 10, rotation: 0.1),
             ),
           ],
         ),
@@ -178,30 +251,18 @@ class _GoalFrameItem extends StatelessWidget {
 
   Widget _buildInfoBadge(String label, String value) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.6),
+        color: Colors.white.withOpacity(0.8),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: AppTheme.caption.copyWith(
-              fontWeight: FontWeight.w600,
-              fontSize: 9,
-            ),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            value,
-            style: AppTheme.caption.copyWith(
-              fontWeight: FontWeight.w700,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-        ],
+      child: Text(
+        '$label: $value',
+        style: AppTheme.caption.copyWith(
+          fontWeight: FontWeight.w600,
+          fontSize: 9,
+          color: AppTheme.textPrimary,
+        ),
       ),
     );
   }

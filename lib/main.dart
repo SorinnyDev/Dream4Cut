@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'theme/app_theme.dart';
+import 'providers/goal_provider.dart';
 import 'views/main_scaffold.dart';
 
 void main() {
-  runApp(const Dream4CutApp());
+  runApp(
+    MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => GoalProvider())],
+      child: const Dream4CutApp(),
+    ),
+  );
 }
 
 class Dream4CutApp extends StatelessWidget {
