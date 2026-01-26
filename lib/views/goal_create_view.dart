@@ -21,6 +21,13 @@ class GoalCreateView extends StatefulWidget {
 class _GoalCreateViewState extends State<GoalCreateView> {
   final _titleController = TextEditingController();
   int _selectedThemeIndex = 0;
+  bool _isSaving = false;
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,32 +129,60 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                     const SizedBox(height: 50),
                     Center(
                       child: GestureDetector(
-                        onTap: () async {
-                          if (_titleController.text.isNotEmpty) {
-                            await context.read<GoalProvider>().addGoal(
-                              _titleController.text,
-                              'theme_$_selectedThemeIndex',
-                              widget.frameIndex,
-                              widget.slotIndex,
-                            );
-                            if (mounted) Navigator.pop(context);
-                          }
-                        },
+                        onTap: _isSaving
+                            ? null
+                            : () async {
+                                if (_titleController.text.isNotEmpty) {
+                                  setState(() => _isSaving = true);
+                                  try {
+                                    await context.read<GoalProvider>().addGoal(
+                                      _titleController.text,
+                                      'theme_$_selectedThemeIndex',
+                                      widget.frameIndex,
+                                      widget.slotIndex,
+                                    );
+                                    if (mounted) Navigator.pop(context);
+                                  } catch (e) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(content: Text('저장 실패: $e')),
+                                      );
+                                    }
+                                  } finally {
+                                    if (mounted) {
+                                      setState(() => _isSaving = false);
+                                    }
+                                  }
+                                }
+                              },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 40,
                             vertical: 12,
                           ),
                           decoration: BoxDecoration(
-                            color: AppTheme.textPrimary,
+                            color: _isSaving
+                                ? AppTheme.textSecondary
+                                : AppTheme.textPrimary,
                             borderRadius: BorderRadius.circular(30),
                           ),
-                          child: Text(
-                            '수집 시작하기',
-                            style: AppTheme.bodyLarge.copyWith(
-                              color: Colors.white,
-                            ),
-                          ),
+                          child: _isSaving
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  '목표 정하기',
+                                  style: AppTheme.bodyLarge.copyWith(
+                                    color: Colors.white,
+                                  ),
+                                ),
                         ),
                       ),
                     ),

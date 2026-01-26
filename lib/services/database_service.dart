@@ -3,6 +3,8 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/goal.dart';
 
+import '../models/log.dart';
+
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   factory DatabaseService() => _instance;
@@ -18,7 +20,21 @@ class DatabaseService {
 
   Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), 'dream4cut.db');
-    return await openDatabase(path, version: 1, onCreate: _onCreate);
+    return await openDatabase(
+      path,
+      version: 2,
+      onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
+    );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // 개발 초기이므로 테이블 전체 삭제 후 재생성하여 스키마 일치시킴
+      await db.execute('DROP TABLE IF EXISTS logs');
+      await db.execute('DROP TABLE IF EXISTS goals');
+      await _onCreate(db, newVersion);
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -37,14 +53,14 @@ class DatabaseService {
       )
     ''');
 
-    // 로그 테이블도 필요할 수 있음 (기존 log.dart 참고)
     await db.execute('''
       CREATE TABLE logs(
         id TEXT PRIMARY KEY,
         goalId TEXT,
-        count INTEGER,
-        note TEXT,
-        timestamp TEXT,
+        content TEXT,
+        actionDate TEXT,
+        createdAt TEXT,
+        "index" INTEGER,
         FOREIGN KEY (goalId) REFERENCES goals (id) ON DELETE CASCADE
       )
     ''');
@@ -79,5 +95,31 @@ class DatabaseService {
   Future<void> deleteGoal(String id) async {
     final db = await database;
     await db.delete('goals', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // Log CRUD
+  Future<void> insertLog(Log log) async {
+    final db = await database;
+    await db.insert(
+      'logs',
+      log.toJson(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<Log>> getLogsByGoalId(String goalId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'logs',
+      where: 'goalId = ?',
+      whereArgs: [goalId],
+      orderBy: 'createdAt DESC',
+    );
+    return List.generate(maps.length, (i) => Log.fromJson(maps[i]));
+  }
+
+  Future<void> deleteLog(String id) async {
+    final db = await database;
+    await db.delete('logs', where: 'id = ?', whereArgs: [id]);
   }
 }

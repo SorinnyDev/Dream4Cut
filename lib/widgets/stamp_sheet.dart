@@ -126,24 +126,27 @@ class _StampSheetState extends State<StampSheet>
 
   /// 200칸 스탬프 그리드
   Widget _buildStampGrid() {
+    final int rowCount = ((widget.filledCount / gridColumns).floor() + 1).clamp(
+      1,
+      gridRows,
+    );
+    final int visibleCells = rowCount * gridColumns;
+
     return Padding(
       padding: const EdgeInsets.all(AppTheme.spacingM),
-      child: AspectRatio(
-        aspectRatio: gridColumns / gridRows, // 10:20 = 1:2
-        child: GridView.builder(
-          physics: const NeverScrollableScrollPhysics(),
-          shrinkWrap: true,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: gridColumns,
-            mainAxisSpacing: 2,
-            crossAxisSpacing: 2,
-          ),
-          itemCount: totalCells,
-          itemBuilder: (context, index) {
-            final isFilled = index < widget.filledCount;
-            return _buildStampCell(index, isFilled);
-          },
+      child: GridView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        shrinkWrap: true,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: gridColumns,
+          mainAxisSpacing: 2,
+          crossAxisSpacing: 2,
         ),
+        itemCount: visibleCells,
+        itemBuilder: (context, index) {
+          final isFilled = index < widget.filledCount;
+          return _buildStampCell(index, isFilled);
+        },
       ),
     );
   }
@@ -153,21 +156,25 @@ class _StampSheetState extends State<StampSheet>
     return Container(
       decoration: BoxDecoration(
         color: isFilled
-            ? AppTheme.getPastelColor(index)
+            ? AppTheme.getAccentColor(index)
             : AppTheme.ivoryPaper.withOpacity(0.5),
         borderRadius: BorderRadius.circular(2),
         border: Border.all(
-          color: AppTheme.pencilDash.withOpacity(0.3),
-          width: 0.5,
+          color: AppTheme.pencilDash.withOpacity(0.6),
+          width: 0.8,
         ),
       ),
       child: isFilled
-          ? Center(
-              child: Icon(
-                Icons.check,
-                size: 8,
-                color: Colors.white.withOpacity(0.6),
-              ),
+          ? LayoutBuilder(
+              builder: (context, constraints) {
+                return Center(
+                  child: Icon(
+                    Icons.check,
+                    size: constraints.maxWidth * 0.8,
+                    color: Colors.white.withOpacity(0.9),
+                  ),
+                );
+              },
             )
           : null,
     );
@@ -193,13 +200,6 @@ class _StampSheetState extends State<StampSheet>
                     AppTheme.pastelColors.length],
               ),
             ),
-          ),
-          const SizedBox(height: AppTheme.spacingXs),
-
-          // 진행률 텍스트
-          Text(
-            '${(progress * 100).toStringAsFixed(1)}% 완성',
-            style: AppTheme.caption,
           ),
         ],
       ),

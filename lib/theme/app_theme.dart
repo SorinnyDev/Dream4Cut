@@ -25,6 +25,18 @@ class AppTheme {
     Color(0xFFE5FFFA), // 파스텔 시안
   ];
 
+  /// 주요 강조 톤 (버튼 등 활성화 요소용)
+  static const List<Color> accentColors = [
+    Color(0xFFFF9BAA), // 강조 핑크
+    Color(0xFFFFB347), // 강조 피치
+    Color(0xFFFFD700), // 강조 옐로우
+    Color(0xFF77DD77), // 강조 민트
+    Color(0xFF779ECB), // 강조 블루
+    Color(0xFFB39EB5), // 강조 라벤더
+    Color(0xFFFF69B4), // 강조 로즈
+    Color(0xFF00CED1), // 강조 시안
+  ];
+
   /// 마스킹 테이프 색상
   static const Color maskingTape = Color(0xFFFFD6A5);
   static const Color maskingTapeLight = Color(0xFFFFF0DB);
@@ -180,6 +192,11 @@ class AppTheme {
   /// 파스텔 컬러 선택 (인덱스 기반)
   static Color getPastelColor(int index) {
     return pastelColors[index % pastelColors.length];
+  }
+
+  /// 강조 컬러 선택 (인덱스 기반)
+  static Color getAccentColor(int index) {
+    return accentColors[index % accentColors.length];
   }
 
   /// 책갈피 컬러 선택 (인덱스 기반)

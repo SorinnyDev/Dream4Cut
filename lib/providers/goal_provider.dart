@@ -3,6 +3,8 @@ import '../models/goal.dart';
 import '../services/database_service.dart';
 import 'package:uuid/uuid.dart';
 
+import '../models/log.dart';
+
 class GoalProvider with ChangeNotifier {
   final DatabaseService _dbService = DatabaseService();
   List<Goal> _goals = [];
@@ -27,6 +29,37 @@ class GoalProvider with ChangeNotifier {
     _goals = await _dbService.getGoals();
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<List<Log>> getLogs(String goalId) async {
+    return await _dbService.getLogsByGoalId(goalId);
+  }
+
+  Future<void> addLog(String goalId, String content) async {
+    final goalIndex = _goals.indexWhere((g) => g.id == goalId);
+    if (goalIndex != -1) {
+      final goal = _goals[goalIndex];
+      final newIndex = goal.totalCount + 1;
+
+      final newLog = Log(
+        id: const Uuid().v4(),
+        goalId: goalId,
+        content: content,
+        actionDate: DateTime.now(),
+        createdAt: DateTime.now(),
+        index: newIndex,
+      );
+
+      await _dbService.insertLog(newLog);
+
+      final updatedGoal = goal.copyWith(
+        totalCount: newIndex,
+        updatedAt: DateTime.now(),
+      );
+
+      await _dbService.updateGoal(updatedGoal);
+      await loadGoals();
+    }
   }
 
   Future<void> addGoal(
