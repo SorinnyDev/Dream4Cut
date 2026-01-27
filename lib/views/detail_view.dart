@@ -18,42 +18,22 @@ class DetailView extends StatefulWidget {
 
 class _DetailViewState extends State<DetailView>
     with SingleTickerProviderStateMixin {
-  late AnimationController _stampController;
-  late Animation<double> _stampAnimation;
-  bool _isStamped = false;
   final TextEditingController _logController = TextEditingController();
   bool _isSaving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _stampController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-    _stampAnimation = CurvedAnimation(
-      parent: _stampController,
-      curve: Curves.elasticOut,
-    );
-  }
+  bool _showCompletionOverlay = false;
 
   @override
   void dispose() {
-    _stampController.dispose();
     _logController.dispose();
     super.dispose();
   }
 
   void _triggerCompletion() async {
-    setState(() => _isStamped = true);
-    await _stampController.forward();
+    // Show overlay first for emotional payoff
+    setState(() => _showCompletionOverlay = true);
 
-    if (mounted) {
-      await context.read<GoalProvider>().completeGoal(widget.goal.id);
-      if (mounted) {
-        Navigator.pop(context, true);
-      }
-    }
+    // Process completion in background
+    await context.read<GoalProvider>().completeGoal(widget.goal.id);
   }
 
   Future<void> _saveLog() async {
@@ -67,9 +47,10 @@ class _DetailViewState extends State<DetailView>
       );
       _logController.clear();
       if (mounted) {
+        FocusScope.of(context).unfocus();
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('발걸음이 기록되었습니다.')));
+        ).showSnackBar(const SnackBar(content: Text('기록이 안전하게 보관되었습니다.')));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -78,7 +59,6 @@ class _DetailViewState extends State<DetailView>
 
   @override
   Widget build(BuildContext context) {
-    // Look up the goal from provider to get latest count
     final allGoals = context.watch<GoalProvider>().goals;
     final currentGoal = allGoals.firstWhere(
       (g) => g.id == widget.goal.id,
@@ -88,7 +68,10 @@ class _DetailViewState extends State<DetailView>
     return Scaffold(
       backgroundColor: AppTheme.ivoryPaper,
       appBar: AppBar(
-        title: Text(currentGoal.title),
+        title: Text(
+          currentGoal.title,
+          style: AppTheme.headingSmall.copyWith(fontWeight: FontWeight.w900),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => Navigator.pop(context),
@@ -98,11 +81,11 @@ class _DetailViewState extends State<DetailView>
             Padding(
               padding: const EdgeInsets.only(right: 12.0),
               child: Center(
-                child: GestureDetector(
+                child: Bounceable(
                   onTap: _triggerCompletion,
                   child: const MaskingTape(
-                    text: '완성',
-                    width: 60,
+                    text: '완성하기',
+                    width: 70,
                     height: 32,
                     rotation: 0.05,
                   ),
@@ -113,217 +96,149 @@ class _DetailViewState extends State<DetailView>
       ),
       body: Stack(
         children: [
-          SingleChildScrollView(
-            child: Column(
-              children: [
-                const SizedBox(height: AppTheme.spacingM),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.spacingL,
-                  ),
-                  child: StampSheetStack(
-                    totalCount: currentGoal.totalCount,
-                    theme: currentGoal.backgroundTheme,
-                  ),
-                ),
-                const SizedBox(height: AppTheme.spacingL),
-
-                // Log Input Section (Only for active goals)
-                if (currentGoal.status == GoalStatus.active)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppTheme.spacingL,
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.all(AppTheme.spacingM),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        boxShadow: AppTheme.paperShadow,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                          color: AppTheme.pencilDash.withOpacity(0.2),
+          Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      const SizedBox(height: AppTheme.spacingM),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppTheme.spacingL,
+                        ),
+                        child: StampSheetStack(
+                          totalCount: currentGoal.totalCount,
+                          theme: currentGoal.backgroundTheme,
                         ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.water_drop,
-                                color: AppTheme.getPastelColor(
-                                  0,
-                                ).withOpacity(0.8),
-                                size: 20,
+                      const SizedBox(height: AppTheme.spacingL),
+
+                      // Log Input Section
+                      if (currentGoal.status == GoalStatus.active)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppTheme.spacingL,
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.all(AppTheme.spacingM),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              boxShadow: AppTheme.paperShadow,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: AppTheme.pencilCharcoal.withOpacity(0.1),
                               ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: TextField(
-                                  controller: _logController,
-                                  maxLines: null,
-                                  decoration: InputDecoration(
-                                    hintText: '오늘의 발걸음을 기록해보세요.',
-                                    hintStyle: AppTheme.bodyMedium.copyWith(
-                                      color: AppTheme.textTertiary.withOpacity(
-                                        0.6,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.edit_note,
+                                      color: AppTheme.pencilCharcoal
+                                          .withOpacity(0.5),
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _logController,
+                                        maxLines: null,
+                                        decoration: InputDecoration(
+                                          hintText: '오늘의 조각을 기록하세요...',
+                                          hintStyle: AppTheme.bodyMedium
+                                              .copyWith(
+                                                color: AppTheme.textTertiary
+                                                    .withOpacity(0.4),
+                                              ),
+                                          border: InputBorder.none,
+                                          isDense: true,
+                                        ),
+                                        style: AppTheme.bodyLarge.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.textPrimary,
+                                        ),
                                       ),
                                     ),
-                                    border: InputBorder.none,
-                                    isDense: true,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      vertical: 8,
-                                    ),
-                                  ),
-                                  style: AppTheme.bodyLarge.copyWith(
-                                    fontWeight: FontWeight.bold,
+                                  ],
+                                ),
+                                Container(
+                                  height: 1,
+                                  width: double.infinity,
+                                  margin: const EdgeInsets.only(top: 4),
+                                  color: AppTheme.pencilCharcoal.withOpacity(
+                                    0.2,
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          Container(
-                            height: 1.5,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: AppTheme.textPrimary.withOpacity(0.4),
-                              borderRadius: BorderRadius.circular(1),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              GestureDetector(
-                                onTap: _isSaving ? null : _saveLog,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 10,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.getAccentColor(
-                                      0,
-                                    ).withOpacity(_isSaving ? 0.6 : 1.0),
-                                    borderRadius: BorderRadius.circular(25),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppTheme.getAccentColor(
-                                          0,
-                                        ).withOpacity(0.2),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    _isSaving ? '기록중' : '작성완료',
-                                    style: AppTheme.bodySmall.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                const SizedBox(height: AppTheme.spacingL),
-                _buildDashedDivider(),
-                const SizedBox(height: AppTheme.spacingL),
-
-                // Real Logs History
-                FutureBuilder<List<Log>>(
-                  future: context.read<GoalProvider>().getLogs(currentGoal.id),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(20.0),
-                          child: CircularProgressIndicator(),
                         ),
-                      );
-                    }
-                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(32.0),
-                          child: Text(
-                            '첫 발걸음을 기록해보세요!',
-                            style: AppTheme.bodySmall,
-                          ),
-                        ),
-                      );
-                    }
 
-                    final logs = snapshot.data!;
-                    final Map<String, List<Log>> groupedLogs = {};
-                    for (var log in logs) {
-                      if (!groupedLogs.containsKey(log.dateKey)) {
-                        groupedLogs[log.dateKey] = [];
-                      }
-                      groupedLogs[log.dateKey]!.add(log);
-                    }
-                    final List<String> sortedDates = groupedLogs.keys.toList()
-                      ..sort((a, b) => b.compareTo(a));
+                      const SizedBox(height: AppTheme.spacingL),
+                      _buildDashedDivider(),
+                      const SizedBox(height: AppTheme.spacingL),
 
-                    return ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: sortedDates.length,
-                      itemBuilder: (context, dateIndex) {
-                        final dateKey = sortedDates[dateIndex];
-                        final logsForDate = groupedLogs[dateKey]!;
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildDateHeader(dateKey),
-                            ...logsForDate
-                                .map((log) => _buildLogItem(log))
-                                .toList(),
-                            const SizedBox(height: AppTheme.spacingL),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                ),
-                const SizedBox(height: AppTheme.spacingXxl),
-              ],
-            ),
-          ),
-          if (_isStamped)
-            Center(
-              child: ScaleTransition(
-                scale: _stampAnimation,
-                child: RotationTransition(
-                  turns: const AlwaysStoppedAnimation(-10 / 360),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.red.withOpacity(0.7),
-                        width: 4,
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'ACHIEVED',
-                      style: AppTheme.headingLarge.copyWith(
-                        color: Colors.red.withOpacity(0.7),
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 4.0,
-                      ),
-                    ),
+                      // Logs Timeline
+                      _buildLogsHistory(currentGoal),
+                      const SizedBox(height: 100), // Space for bottom button
+                    ],
                   ),
                 ),
               ),
+            ],
+          ),
+
+          // Fixed Bottom Button
+          if (currentGoal.status == GoalStatus.active)
+            Positioned(
+              left: 20,
+              right: 20,
+              bottom: 30,
+              child: Bounceable(
+                onTap: _isSaving ? null : _saveLog,
+                child: Container(
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: AppTheme.pencilCharcoal,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        offset: const Offset(2, 2),
+                        blurRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            '기록하기',
+                            style: AppTheme.headingSmall.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2.0,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+            ),
+
+          if (_showCompletionOverlay)
+            _CompletionOverlay(
+              goal: currentGoal,
+              onClose: () => Navigator.pop(context, true),
             ),
         ],
       ),
@@ -335,12 +250,12 @@ class _DetailViewState extends State<DetailView>
       margin: const EdgeInsets.symmetric(horizontal: AppTheme.spacingL),
       child: Row(
         children: List.generate(
-          30,
+          40,
           (index) => Expanded(
             child: Container(
               height: 1,
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              color: AppTheme.pencilDash.withOpacity(0.5),
+              margin: const EdgeInsets.symmetric(horizontal: 1.5),
+              color: AppTheme.pencilCharcoal.withOpacity(0.1),
             ),
           ),
         ),
@@ -348,75 +263,196 @@ class _DetailViewState extends State<DetailView>
     );
   }
 
+  Widget _buildLogsHistory(Goal currentGoal) {
+    return FutureBuilder<List<Log>>(
+      future: context.read<GoalProvider>().getLogs(currentGoal.id),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty)
+          return const SizedBox();
+
+        final logs = snapshot.data!;
+        final Map<String, List<Log>> groupedLogs = {};
+        for (var log in logs) {
+          if (!groupedLogs.containsKey(log.dateKey)) {
+            groupedLogs[log.dateKey] = [];
+          }
+          groupedLogs[log.dateKey]!.add(log);
+        }
+        final List<String> sortedDates = groupedLogs.keys.toList()
+          ..sort((a, b) => b.compareTo(a));
+
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: sortedDates.length,
+          itemBuilder: (context, dateIndex) {
+            final dateKey = sortedDates[dateIndex];
+            final logsForDate = groupedLogs[dateKey]!;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildDateHeader(dateKey),
+                ...logsForDate.map((log) => _buildLogItem(log)).toList(),
+                const SizedBox(height: AppTheme.spacingL),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildDateHeader(String dateKey) {
-    return Container(
-      margin: const EdgeInsets.only(
-        left: AppTheme.spacingL,
-        bottom: AppTheme.spacingM,
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      transform: Matrix4.rotationZ(-0.02),
-      decoration: BoxDecoration(
-        color: AppTheme.maskingTape.withOpacity(0.7),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            offset: const Offset(1, 1),
-            blurRadius: 2,
-          ),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(left: 24, bottom: 8),
       child: Text(
         dateKey.replaceAll('-', ' . '),
-        style: AppTheme.bodyMedium.copyWith(
-          fontWeight: FontWeight.bold,
-          color: Colors.brown[800],
-          letterSpacing: 1.5,
+        style: AppTheme.caption.copyWith(
+          fontWeight: FontWeight.w900,
+          color: AppTheme.pencilCharcoal.withOpacity(0.5),
+          letterSpacing: 1.2,
         ),
       ),
     );
   }
 
   Widget _buildLogItem(Log log) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppTheme.spacingL + 8,
-        vertical: AppTheme.spacingS,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: AppTheme.pencilCharcoal.withOpacity(0.05)),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Icon(
-              Icons.draw_outlined,
-              size: 14,
-              color: AppTheme.textTertiary,
-            ),
+          Row(
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: AppTheme.pencilCharcoal,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${log.index}번째 기록',
+                style: AppTheme.caption.copyWith(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 10,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: AppTheme.spacingM),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${log.index}번째 발걸음',
-                  style: AppTheme.caption.copyWith(
-                    color: AppTheme.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(log.content, style: AppTheme.bodyMedium),
-                const SizedBox(height: 8),
-                Container(
-                  height: 0.5,
-                  color: AppTheme.pencilDash.withOpacity(0.3),
-                ),
-              ],
+          const SizedBox(height: 6),
+          Text(
+            log.content,
+            style: AppTheme.bodyMedium.copyWith(
+              color: AppTheme.textPrimary,
+              height: 1.5,
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CompletionOverlay extends StatelessWidget {
+  final Goal goal;
+  final VoidCallback onClose;
+
+  const _CompletionOverlay({required this.goal, required this.onClose});
+
+  @override
+  Widget build(BuildContext context) {
+    final themeIndex = int.tryParse(goal.backgroundTheme.split('_').last) ?? 0;
+
+    return Material(
+      color: Colors.black.withOpacity(0.85),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.stars, color: Colors.amber, size: 80),
+            const SizedBox(height: 16),
+            Text(
+              'G O A L    I N',
+              style: AppTheme.headingLarge.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 8.0,
+              ),
+            ),
+            const SizedBox(height: 48),
+
+            // Show the 1x4 Frame mockup
+            Container(
+              width: 280,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(4),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.2),
+                    blurRadius: 20,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(4, (index) {
+                  final isTarget = index == goal.slotIndex;
+                  return Container(
+                    height: 60,
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isTarget
+                          ? AppTheme.getPastelColor(themeIndex).withOpacity(0.5)
+                          : AppTheme.ivoryPaper,
+                      border: Border.all(
+                        color: isTarget
+                            ? AppTheme.pencilCharcoal
+                            : AppTheme.pencilDash.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Center(
+                      child: isTarget
+                          ? Text(
+                              goal.title,
+                              style: AppTheme.bodyMedium.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          : Icon(
+                              Icons.photo,
+                              color: AppTheme.pencilDash.withOpacity(0.5),
+                              size: 20,
+                            ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+
+            const SizedBox(height: 60),
+            Bounceable(
+              onTap: onClose,
+              child: const MaskingTape(
+                text: '수집 보관함으로',
+                width: 140,
+                height: 44,
+                color: AppTheme.maskingTape,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

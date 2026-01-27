@@ -24,36 +24,41 @@ class _HomeViewState extends State<HomeView> {
       backgroundColor: AppTheme.ivoryPaper,
       body: Consumer<GoalProvider>(
         builder: (context, provider, child) {
-          // Identify used frame indices
           final maxFrameIndex = provider.activeGoals.isEmpty
               ? 0
               : provider.activeGoals
                     .map((e) => e.frameIndex)
                     .reduce((a, b) => a > b ? a : b);
 
-          final frameCount =
-              maxFrameIndex + 2; // Always show an extra empty frame
+          final frameCount = maxFrameIndex + 2;
 
           return SafeArea(
             child: Column(
               children: [
-                const SizedBox(height: AppTheme.spacingL),
-                Text(
-                  '드림포컷 (Dream4Cut)',
-                  style: AppTheme.headingLarge.copyWith(
-                    letterSpacing: 2.0,
-                    color: AppTheme.textPrimary.withOpacity(0.8),
+                // Condensed Header
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppTheme.spacingM,
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'DREAM 4 CUT',
+                        style: AppTheme.headingMedium.copyWith(
+                          letterSpacing: 4.0,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                      Container(
+                        width: 40,
+                        height: 2,
+                        margin: const EdgeInsets.only(top: 4),
+                        color: AppTheme.pencilCharcoal.withOpacity(0.3),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: AppTheme.spacingS),
-                Text(
-                  '나만의 소중한 기록 조각들',
-                  style: AppTheme.bodySmall.copyWith(
-                    letterSpacing: 1.2,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: AppTheme.spacingXl),
 
                 Expanded(
                   child: PageView.builder(
@@ -67,7 +72,7 @@ class _HomeViewState extends State<HomeView> {
                   ),
                 ),
 
-                // Indicators
+                // Concise Indicators
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     vertical: AppTheme.spacingM,
@@ -78,13 +83,13 @@ class _HomeViewState extends State<HomeView> {
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: _currentPage == index ? 12 : 8,
-                        height: 8,
+                        width: _currentPage == index ? 16 : 6,
+                        height: 6,
                         decoration: BoxDecoration(
                           color: _currentPage == index
-                              ? AppTheme.textPrimary
-                              : AppTheme.pencilDash,
-                          borderRadius: BorderRadius.circular(4),
+                              ? AppTheme.pencilCharcoal
+                              : AppTheme.pencilCharcoal.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(3),
                         ),
                       );
                     }),
@@ -104,14 +109,13 @@ class _HomeViewState extends State<HomeView> {
         .toList();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingL),
-      child: Container(
-        padding: const EdgeInsets.all(AppTheme.spacingM),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: AppTheme.paperShadow,
-          borderRadius: BorderRadius.circular(4),
-        ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.spacingL,
+        vertical: AppTheme.spacingS,
+      ),
+      child: HandDrawnContainer(
+        padding: const EdgeInsets.all(12),
+        backgroundColor: Colors.white,
         child: Column(
           children: List.generate(4, (slotIndex) {
             final goal = frameGoals.any((g) => g.slotIndex == slotIndex)
@@ -145,7 +149,7 @@ class _GoalFrameItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (goal == null) {
-      return GestureDetector(
+      return Bounceable(
         onTap: () {
           Navigator.push(
             context,
@@ -156,13 +160,13 @@ class _GoalFrameItem extends StatelessWidget {
           );
         },
         child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 4),
+          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
           decoration: BoxDecoration(
-            color: AppTheme.ivoryPaper,
-            borderRadius: BorderRadius.circular(4),
+            color: AppTheme.ivoryPaper.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(2),
             border: Border.all(
-              color: AppTheme.pencilDash.withOpacity(0.5),
-              style: BorderStyle.solid,
+              color: AppTheme.pencilDash.withOpacity(0.3),
+              width: 1,
             ),
           ),
           child: Center(
@@ -170,12 +174,18 @@ class _GoalFrameItem extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.add_photo_alternate_outlined,
-                  color: AppTheme.textTertiary,
-                  size: 30,
+                  Icons.add,
+                  color: AppTheme.textTertiary.withOpacity(0.4),
+                  size: 24,
                 ),
                 const SizedBox(height: 4),
-                Text('새로운 수집품', style: AppTheme.caption),
+                Text(
+                  '새로운 수집품',
+                  style: AppTheme.caption.copyWith(
+                    color: AppTheme.textTertiary.withOpacity(0.5),
+                    fontSize: 9,
+                  ),
+                ),
               ],
             ),
           ),
@@ -185,7 +195,7 @@ class _GoalFrameItem extends StatelessWidget {
 
     final themeIndex = int.tryParse(goal!.backgroundTheme.split('_').last) ?? 0;
 
-    return GestureDetector(
+    return Bounceable(
       onTap: () async {
         final result = await Navigator.push(
           context,
@@ -196,72 +206,43 @@ class _GoalFrameItem extends StatelessWidget {
         }
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
+        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
         decoration: BoxDecoration(
-          color: AppTheme.getPastelColor(themeIndex).withOpacity(0.2),
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: AppTheme.pencilDash.withOpacity(0.2)),
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              right: 8,
-              top: 8,
-              child: Opacity(
-                opacity: 0.1,
-                child: Icon(
-                  Icons.stars,
-                  size: 40,
-                  color: AppTheme.getPastelColor(themeIndex),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(AppTheme.spacingM),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    goal!.title,
-                    style: AppTheme.headingSmall.copyWith(
-                      color: AppTheme.textPrimary,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: AppTheme.spacingS),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [_buildInfoBadge('Stamp', '${goal!.totalCount}')],
-                  ),
-                ],
-              ),
-            ),
-            const Positioned(
-              left: 10,
-              top: 0,
-              child: MaskingTape(width: 40, height: 10, rotation: 0.1),
+          color: AppTheme.getPastelColor(themeIndex).withOpacity(0.4),
+          borderRadius: BorderRadius.circular(2),
+          border: Border.all(color: AppTheme.pencilCharcoal, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.pencilCharcoal.withOpacity(0.1),
+              offset: const Offset(1.5, 1.5),
+              blurRadius: 0,
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildInfoBadge(String label, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        '$label: $value',
-        style: AppTheme.caption.copyWith(
-          fontWeight: FontWeight.w600,
-          fontSize: 9,
-          color: AppTheme.textPrimary,
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(AppTheme.spacingM),
+              child: Center(
+                child: Text(
+                  goal!.title,
+                  style: AppTheme.headingSmall.copyWith(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            const Positioned(
+              left: 8,
+              top: -2,
+              child: MaskingTape(width: 30, height: 8, rotation: 0.1),
+            ),
+          ],
         ),
       ),
     );

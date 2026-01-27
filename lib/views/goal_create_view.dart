@@ -34,7 +34,10 @@ class _GoalCreateViewState extends State<GoalCreateView> {
     return Scaffold(
       backgroundColor: AppTheme.ivoryPaper,
       appBar: AppBar(
-        title: const Text('새 수집 목표'),
+        title: Text(
+          '새 수집 목표',
+          style: AppTheme.headingSmall.copyWith(fontWeight: FontWeight.w900),
+        ),
         backgroundColor: Colors.transparent,
       ),
       body: SingleChildScrollView(
@@ -45,44 +48,50 @@ class _GoalCreateViewState extends State<GoalCreateView> {
               const MaskingTape(text: 'DREAM MEMO', width: 140),
               const SizedBox(height: 20),
 
-              // Diary Page Container
-              Container(
-                width: double.infinity,
+              HandDrawnContainer(
                 padding: const EdgeInsets.all(AppTheme.spacingL),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: AppTheme.paperShadow,
-                  borderRadius: BorderRadius.circular(4),
-                ),
+                backgroundColor: Colors.white,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('나의 새로운 발자국은 무엇인가요?', style: AppTheme.headingSmall),
-                    const SizedBox(height: 20),
+                    Text(
+                      '나의 새로운 발걸음은\n무엇인가요?',
+                      style: AppTheme.headingSmall.copyWith(
+                        fontWeight: FontWeight.w900,
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                     TextField(
                       controller: _titleController,
                       decoration: InputDecoration(
-                        hintText: '목표를 입력하세요 (예: 물 2L 마시기)',
+                        hintText: '목표를 입력하세요 (예: 매일 만보 걷기)',
                         hintStyle: AppTheme.bodyMedium.copyWith(
-                          color: AppTheme.textTertiary,
+                          color: AppTheme.textTertiary.withOpacity(0.4),
                         ),
-                        border: const UnderlineInputBorder(
-                          borderSide: BorderSide(color: AppTheme.pencilDash),
+                        border: UnderlineInputBorder(
+                          borderSide: BorderSide(
+                            color: AppTheme.pencilCharcoal.withOpacity(0.2),
+                          ),
                         ),
                         focusedBorder: const UnderlineInputBorder(
                           borderSide: BorderSide(
-                            color: AppTheme.textSecondary,
+                            color: AppTheme.pencilCharcoal,
                             width: 2,
                           ),
                         ),
                       ),
-                      style: AppTheme.headingMedium,
-                    ),
-                    const SizedBox(height: 40),
-                    Text(
-                      '색상 선택',
-                      style: AppTheme.bodyLarge.copyWith(
+                      style: AppTheme.headingMedium.copyWith(
+                        color: AppTheme.textPrimary,
                         fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 48),
+                    Text(
+                      '수집 테마',
+                      style: AppTheme.bodyLarge.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -92,97 +101,83 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                       children: List.generate(AppTheme.pastelColors.length, (
                         index,
                       ) {
-                        return GestureDetector(
+                        final isSelected = _selectedThemeIndex == index;
+                        return Bounceable(
                           onTap: () =>
                               setState(() => _selectedThemeIndex = index),
                           child: Container(
-                            width: 50,
-                            height: 50,
+                            width: 44,
+                            height: 44,
                             decoration: BoxDecoration(
-                              color: AppTheme.pastelColors[index],
+                              color: AppTheme.pastelColors[index].withOpacity(
+                                0.8,
+                              ),
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: _selectedThemeIndex == index
-                                    ? AppTheme.textPrimary
+                                color: isSelected
+                                    ? AppTheme.pencilCharcoal
                                     : Colors.transparent,
                                 width: 2,
                               ),
-                              boxShadow: _selectedThemeIndex == index
+                              boxShadow: isSelected
                                   ? [
                                       BoxShadow(
-                                        color: Colors.black26,
-                                        blurRadius: 4,
+                                        color: AppTheme.pencilCharcoal
+                                            .withOpacity(0.2),
+                                        offset: const Offset(2, 2),
+                                        blurRadius: 0,
                                       ),
                                     ]
                                   : null,
                             ),
-                            child: _selectedThemeIndex == index
+                            child: isSelected
                                 ? const Icon(
                                     Icons.check,
-                                    color: AppTheme.textPrimary,
+                                    color: AppTheme.pencilCharcoal,
+                                    size: 20,
                                   )
                                 : null,
                           ),
                         );
                       }),
                     ),
-                    const SizedBox(height: 50),
+                    const SizedBox(height: 60),
                     Center(
-                      child: GestureDetector(
-                        onTap: _isSaving
-                            ? null
-                            : () async {
-                                if (_titleController.text.isNotEmpty) {
-                                  setState(() => _isSaving = true);
-                                  try {
-                                    await context.read<GoalProvider>().addGoal(
-                                      _titleController.text,
-                                      'theme_$_selectedThemeIndex',
-                                      widget.frameIndex,
-                                      widget.slotIndex,
-                                    );
-                                    if (mounted) Navigator.pop(context);
-                                  } catch (e) {
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(content: Text('저장 실패: $e')),
-                                      );
-                                    }
-                                  } finally {
-                                    if (mounted) {
-                                      setState(() => _isSaving = false);
-                                    }
-                                  }
-                                }
-                              },
+                      child: Bounceable(
+                        onTap: _isSaving ? null : _saveGoal,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 40,
-                            vertical: 12,
-                          ),
+                          width: double.infinity,
+                          height: 56,
                           decoration: BoxDecoration(
-                            color: _isSaving
-                                ? AppTheme.textSecondary
-                                : AppTheme.textPrimary,
-                            borderRadius: BorderRadius.circular(30),
+                            color: AppTheme.pencilCharcoal,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                offset: const Offset(2, 2),
+                                blurRadius: 0,
+                              ),
+                            ],
                           ),
-                          child: _isSaving
-                              ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
+                          child: Center(
+                            child: _isSaving
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text(
+                                    '목표 정하기',
+                                    style: AppTheme.headingSmall.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 2.0,
+                                    ),
                                   ),
-                                )
-                              : Text(
-                                  '목표 정하기',
-                                  style: AppTheme.bodyLarge.copyWith(
-                                    color: Colors.white,
-                                  ),
-                                ),
+                          ),
                         ),
                       ),
                     ),
@@ -194,5 +189,28 @@ class _GoalCreateViewState extends State<GoalCreateView> {
         ),
       ),
     );
+  }
+
+  Future<void> _saveGoal() async {
+    if (_titleController.text.trim().isEmpty) return;
+
+    setState(() => _isSaving = true);
+    try {
+      await context.read<GoalProvider>().addGoal(
+        _titleController.text.trim(),
+        'theme_$_selectedThemeIndex',
+        widget.frameIndex,
+        widget.slotIndex,
+      );
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('저장 실패: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 }

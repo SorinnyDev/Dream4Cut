@@ -104,20 +104,20 @@ class _StampSheetState extends State<StampSheet>
           topLeft: Radius.circular(AppTheme.radiusM),
           topRight: Radius.circular(AppTheme.radiusM),
         ),
+        border: const Border(
+          bottom: BorderSide(color: AppTheme.pencilCharcoal, width: 0.5),
+        ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            'No.${widget.sheetNumber}',
+            'SERIES NO.${widget.sheetNumber}',
             style: AppTheme.bodySmall.copyWith(
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.w900,
+              color: AppTheme.pencilCharcoal,
+              letterSpacing: 2.0,
             ),
-          ),
-          Text(
-            '${widget.filledCount} / $totalCells',
-            style: AppTheme.caption.copyWith(color: AppTheme.textSecondary),
           ),
         ],
       ),
@@ -139,8 +139,8 @@ class _StampSheetState extends State<StampSheet>
         shrinkWrap: true,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: gridColumns,
-          mainAxisSpacing: 2,
-          crossAxisSpacing: 2,
+          mainAxisSpacing: 3,
+          crossAxisSpacing: 3,
         ),
         itemCount: visibleCells,
         itemBuilder: (context, index) {
@@ -157,10 +157,12 @@ class _StampSheetState extends State<StampSheet>
       decoration: BoxDecoration(
         color: isFilled
             ? AppTheme.getAccentColor(index)
-            : AppTheme.ivoryPaper.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(2),
+            : AppTheme.ivoryPaper.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(1),
         border: Border.all(
-          color: AppTheme.pencilDash.withOpacity(0.6),
+          color: isFilled
+              ? AppTheme.pencilCharcoal.withOpacity(0.4)
+              : AppTheme.pencilCharcoal.withOpacity(0.15),
           width: 0.8,
         ),
       ),
@@ -180,30 +182,9 @@ class _StampSheetState extends State<StampSheet>
     );
   }
 
-  /// 인화지 푸터 (진행률 바)
+  /// 인화지 푸터 (그냥 여백으로 대체)
   Widget _buildSheetFooter() {
-    final progress = widget.filledCount / totalCells;
-
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.spacingS),
-      child: Column(
-        children: [
-          // 진행률 바
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 6,
-              backgroundColor: AppTheme.pencilDash.withOpacity(0.2),
-              valueColor: AlwaysStoppedAnimation<Color>(
-                AppTheme.pastelColors[widget.sheetNumber %
-                    AppTheme.pastelColors.length],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return const SizedBox(height: AppTheme.spacingS);
   }
 }
 

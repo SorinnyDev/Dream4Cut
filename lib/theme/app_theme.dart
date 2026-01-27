@@ -42,12 +42,13 @@ class AppTheme {
   static const Color maskingTapeLight = Color(0xFFFFF0DB);
 
   /// 텍스트 색상
-  static const Color textPrimary = Color(0xFF2C2C2C);
-  static const Color textSecondary = Color(0xFF6B6B6B);
-  static const Color textTertiary = Color(0xFF9B9B9B);
+  static const Color textPrimary = Color(0xFF1A1A1A); // 더 진한 차콜
+  static const Color textSecondary = Color(0xFF4A4A4A);
+  static const Color textTertiary = Color(0xFF888888);
 
-  /// 연필 점선 색상
-  static const Color pencilDash = Color(0xFFCCCCCC);
+  /// 연필/경계선 색상
+  static const Color pencilCharcoal = Color(0xFF333333); // 경계선용 진한 색
+  static const Color pencilDash = Color(0xFFBBBBBB);
 
   /// 책갈피 색상
   static const List<Color> bookmarkColors = [
@@ -134,26 +135,22 @@ class AppTheme {
   static const double radiusM = 12.0;
   static const double radiusL = 16.0;
 
-  // ============ 그림자 (종이 질감) ============
+  // ============ 그림자 (종이 레이어링 효과) ============
 
+  /// 고체 오프셋 그림자 (Solid Offset Shadow)
   static List<BoxShadow> paperShadow = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.08),
-      blurRadius: 12,
-      offset: const Offset(0, 4),
-    ),
-    BoxShadow(
-      color: Colors.black.withOpacity(0.04),
-      blurRadius: 6,
-      offset: const Offset(0, 2),
+      color: Colors.black.withOpacity(0.12),
+      blurRadius: 0,
+      offset: const Offset(2, 2),
     ),
   ];
 
   static List<BoxShadow> cardShadow = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.06),
-      blurRadius: 8,
-      offset: const Offset(0, 2),
+      color: Colors.black.withOpacity(0.08),
+      blurRadius: 0,
+      offset: const Offset(1, 1),
     ),
   ];
 
