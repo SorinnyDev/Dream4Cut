@@ -193,7 +193,8 @@ class _GoalFrameItem extends StatelessWidget {
       );
     }
 
-    final themeIndex = int.tryParse(goal!.backgroundTheme.split('_').last) ?? 0;
+    final themeIndex = AppTheme.getThemeIndex(goal!.backgroundTheme);
+    final deepColor = AppTheme.getDeepMutedColor(themeIndex);
 
     return Bounceable(
       onTap: () async {
@@ -210,10 +211,10 @@ class _GoalFrameItem extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.getPastelColor(themeIndex).withOpacity(0.4),
           borderRadius: BorderRadius.circular(2),
-          border: Border.all(color: AppTheme.pencilCharcoal, width: 1),
+          border: Border.all(color: deepColor.withOpacity(0.4), width: 1.2),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.pencilCharcoal.withOpacity(0.1),
+              color: deepColor.withOpacity(0.1),
               offset: const Offset(1.5, 1.5),
               blurRadius: 0,
             ),
@@ -229,7 +230,7 @@ class _GoalFrameItem extends StatelessWidget {
                   style: AppTheme.headingSmall.copyWith(
                     color: AppTheme.textPrimary,
                     fontWeight: FontWeight.w900,
-                    fontSize: 15,
+                    fontSize: 16,
                   ),
                   textAlign: TextAlign.center,
                   maxLines: 2,
@@ -237,10 +238,15 @@ class _GoalFrameItem extends StatelessWidget {
                 ),
               ),
             ),
-            const Positioned(
+            Positioned(
               left: 8,
               top: -2,
-              child: MaskingTape(width: 30, height: 8, rotation: 0.1),
+              child: MaskingTape(
+                width: 35,
+                height: 10,
+                rotation: 0.1,
+                color: AppTheme.getPastelColor(themeIndex),
+              ),
             ),
           ],
         ),

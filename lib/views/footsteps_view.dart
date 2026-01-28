@@ -77,7 +77,12 @@ class FootstepsView extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('$year년의 기록', style: AppTheme.headingMedium),
+            Text(
+              '$year년의 기록',
+              style: AppTheme.headingMedium.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
+            ),
             const SizedBox(height: 16),
             GridView.builder(
               shrinkWrap: true,
@@ -91,16 +96,14 @@ class FootstepsView extends StatelessWidget {
               itemCount: yearGoals.length,
               itemBuilder: (context, gIndex) {
                 final goal = yearGoals[gIndex];
-                final themeIndex =
-                    int.tryParse(goal.backgroundTheme.split('_').last) ?? 0;
+                final themeIndex = AppTheme.getThemeIndex(goal.backgroundTheme);
+                final deepColor = AppTheme.getDeepMutedColor(themeIndex);
 
                 return Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
                     boxShadow: AppTheme.cardShadow,
-                    border: Border.all(
-                      color: AppTheme.pencilDash.withOpacity(0.3),
-                    ),
+                    border: Border.all(color: deepColor.withOpacity(0.1)),
                   ),
                   child: Column(
                     children: [
@@ -109,22 +112,30 @@ class FootstepsView extends StatelessWidget {
                           margin: const EdgeInsets.all(8),
                           color: AppTheme.getPastelColor(
                             themeIndex,
-                          ).withOpacity(0.3),
+                          ).withOpacity(0.2),
                           child: Stack(
                             children: [
                               Center(
-                                child: Text(
-                                  goal.title,
-                                  style: AppTheme.bodyMedium.copyWith(
-                                    fontWeight: FontWeight.bold,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text(
+                                    goal.title,
+                                    style: AppTheme.bodyMedium.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      color: deepColor,
+                                    ),
+                                    textAlign: TextAlign.center,
                                   ),
-                                  textAlign: TextAlign.center,
                                 ),
                               ),
-                              const Positioned(
+                              Positioned(
                                 top: 0,
                                 left: 10,
-                                child: MaskingTape(width: 30, height: 8),
+                                child: MaskingTape(
+                                  width: 40,
+                                  height: 12,
+                                  color: AppTheme.getPastelColor(themeIndex),
+                                ),
                               ),
                             ],
                           ),
@@ -136,7 +147,10 @@ class FootstepsView extends StatelessWidget {
                           goal.completedAt != null
                               ? DateFormat('MM.dd').format(goal.completedAt!)
                               : '완성',
-                          style: AppTheme.caption,
+                          style: AppTheme.caption.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: deepColor.withOpacity(0.6),
+                          ),
                         ),
                       ),
                     ],
@@ -161,29 +175,38 @@ class FootstepsView extends StatelessWidget {
           HandDrawnContainer(
             child: Column(
               children: [
-                Text('누적 발걸음', style: AppTheme.headingSmall),
+                Text(
+                  '누적 발걸음',
+                  style: AppTheme.headingSmall.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Text(
                   '$totalSteps회',
-                  style: AppTheme.headingLarge.copyWith(fontSize: 40),
+                  style: AppTheme.headingLarge.copyWith(
+                    fontSize: 44,
+                    fontWeight: FontWeight.w900,
+                    color: AppTheme.getDeepMutedColor(0),
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 40),
           // 200 footsteps sheet design
           Text(
             '최근 수집 현황',
-            style: AppTheme.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+            style: AppTheme.bodyLarge.copyWith(fontWeight: FontWeight.w900),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 10,
-              mainAxisSpacing: 4,
-              crossAxisSpacing: 4,
+              mainAxisSpacing: 6,
+              crossAxisSpacing: 6,
             ),
             itemCount: 200,
             itemBuilder: (context, index) {
@@ -192,15 +215,20 @@ class FootstepsView extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isFilled ? AppTheme.getPastelColor(0) : Colors.white,
                   border: Border.all(
-                    color: AppTheme.pencilDash.withOpacity(0.5),
+                    color: isFilled
+                        ? AppTheme.getDeepMutedColor(0).withOpacity(0.3)
+                        : AppTheme.pencilDash.withOpacity(0.3),
                   ),
                   shape: BoxShape.circle,
                 ),
               );
             },
           ),
-          const SizedBox(height: 16),
-          Text('${totalSteps % 200} / 200', style: AppTheme.caption),
+          const SizedBox(height: 20),
+          Text(
+            '${totalSteps % 200} / 200',
+            style: AppTheme.bodySmall.copyWith(fontWeight: FontWeight.w800),
+          ),
         ],
       ),
     );

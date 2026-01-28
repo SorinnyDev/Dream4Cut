@@ -127,7 +127,11 @@ class _DetailViewState extends State<DetailView>
                               boxShadow: AppTheme.paperShadow,
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(
-                                color: AppTheme.pencilCharcoal.withOpacity(0.1),
+                                color: AppTheme.getDeepMutedColor(
+                                  AppTheme.getThemeIndex(
+                                    currentGoal.backgroundTheme,
+                                  ),
+                                ).withOpacity(0.15),
                               ),
                             ),
                             child: Column(
@@ -137,8 +141,11 @@ class _DetailViewState extends State<DetailView>
                                   children: [
                                     Icon(
                                       Icons.edit_note,
-                                      color: AppTheme.pencilCharcoal
-                                          .withOpacity(0.5),
+                                      color: AppTheme.getDeepMutedColor(
+                                        AppTheme.getThemeIndex(
+                                          currentGoal.backgroundTheme,
+                                        ),
+                                      ),
                                       size: 22,
                                     ),
                                     const SizedBox(width: 8),
@@ -157,7 +164,7 @@ class _DetailViewState extends State<DetailView>
                                           isDense: true,
                                         ),
                                         style: AppTheme.bodyLarge.copyWith(
-                                          fontWeight: FontWeight.bold,
+                                          fontWeight: FontWeight.w800,
                                           color: AppTheme.textPrimary,
                                         ),
                                       ),
@@ -165,12 +172,14 @@ class _DetailViewState extends State<DetailView>
                                   ],
                                 ),
                                 Container(
-                                  height: 1,
+                                  height: 1.5,
                                   width: double.infinity,
                                   margin: const EdgeInsets.only(top: 4),
-                                  color: AppTheme.pencilCharcoal.withOpacity(
-                                    0.2,
-                                  ),
+                                  color: AppTheme.getDeepMutedColor(
+                                    AppTheme.getThemeIndex(
+                                      currentGoal.backgroundTheme,
+                                    ),
+                                  ).withOpacity(0.4),
                                 ),
                               ],
                             ),
@@ -183,7 +192,7 @@ class _DetailViewState extends State<DetailView>
 
                       // Logs Timeline
                       _buildLogsHistory(currentGoal),
-                      const SizedBox(height: 100), // Space for bottom button
+                      const SizedBox(height: 120), // Space for bottom button
                     ],
                   ),
                 ),
@@ -200,13 +209,15 @@ class _DetailViewState extends State<DetailView>
               child: Bounceable(
                 onTap: _isSaving ? null : _saveLog,
                 child: Container(
-                  height: 56,
+                  height: 60,
                   decoration: BoxDecoration(
-                    color: AppTheme.pencilCharcoal,
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppTheme.getDeepMutedColor(
+                      AppTheme.getThemeIndex(currentGoal.backgroundTheme),
+                    ),
+                    borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withOpacity(0.15),
                         offset: const Offset(2, 2),
                         blurRadius: 0,
                       ),

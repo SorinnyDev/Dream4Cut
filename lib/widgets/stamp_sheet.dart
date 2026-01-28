@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import 'analog_widgets.dart';
 
 /// 인화지 위젯 (Stamp Sheet)
 ///
@@ -91,35 +92,42 @@ class _StampSheetState extends State<StampSheet>
     );
   }
 
-  /// 인화지 헤더 (번호 표시)
+  /// 인화지 헤더 (목표 상태 표시)
   Widget _buildSheetHeader() {
+    final themeIndex = AppTheme.getThemeIndex(widget.theme);
+    final deepMutedColor = AppTheme.getDeepMutedColor(themeIndex);
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppTheme.spacingM,
         vertical: AppTheme.spacingS,
       ),
       decoration: BoxDecoration(
-        color: AppTheme.maskingTapeLight,
+        color: AppTheme.getPastelColor(themeIndex).withOpacity(0.3),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(AppTheme.radiusM),
           topRight: Radius.circular(AppTheme.radiusM),
         ),
-        border: const Border(
-          bottom: BorderSide(color: AppTheme.pencilCharcoal, width: 0.5),
+        border: Border(
+          bottom: BorderSide(
+            color: deepMutedColor.withOpacity(0.1),
+            width: 0.5,
+          ),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'SERIES NO.${widget.sheetNumber}',
-            style: AppTheme.bodySmall.copyWith(
-              fontWeight: FontWeight.w900,
-              color: AppTheme.pencilCharcoal,
-              letterSpacing: 2.0,
-            ),
+      child: Center(
+        child: MaskingTape(
+          text: '목표를 향해 걷는 중',
+          width: 140,
+          height: 32,
+          rotation: -0.02,
+          color: AppTheme.getPastelColor(themeIndex),
+          textStyle: AppTheme.bodySmall.copyWith(
+            fontWeight: FontWeight.w900,
+            color: deepMutedColor,
+            letterSpacing: 1.0,
           ),
-        ],
+        ),
       ),
     );
   }
@@ -153,6 +161,9 @@ class _StampSheetState extends State<StampSheet>
 
   /// 개별 스탬프 칸
   Widget _buildStampCell(int index, bool isFilled) {
+    final themeIndex = AppTheme.getThemeIndex(widget.theme);
+    final deepMutedColor = AppTheme.getDeepMutedColor(themeIndex);
+
     return Container(
       decoration: BoxDecoration(
         color: isFilled
@@ -161,8 +172,8 @@ class _StampSheetState extends State<StampSheet>
         borderRadius: BorderRadius.circular(1),
         border: Border.all(
           color: isFilled
-              ? AppTheme.pencilCharcoal.withOpacity(0.4)
-              : AppTheme.pencilCharcoal.withOpacity(0.15),
+              ? deepMutedColor.withOpacity(0.5)
+              : AppTheme.pencilCharcoal.withOpacity(0.1),
           width: 0.8,
         ),
       ),
@@ -173,7 +184,7 @@ class _StampSheetState extends State<StampSheet>
                   child: Icon(
                     Icons.check,
                     size: constraints.maxWidth * 0.8,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white,
                   ),
                 );
               },

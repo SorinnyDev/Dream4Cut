@@ -8,6 +8,7 @@ class MaskingTape extends StatelessWidget {
   final double width;
   final double height;
   final double rotation;
+  final TextStyle? textStyle;
 
   const MaskingTape({
     super.key,
@@ -16,6 +17,7 @@ class MaskingTape extends StatelessWidget {
     this.width = 100,
     this.height = 30,
     this.rotation = -0.05,
+    this.textStyle,
   });
 
   @override
@@ -43,12 +45,14 @@ class MaskingTape extends StatelessWidget {
             child: text.isNotEmpty
                 ? Text(
                     text,
-                    style: AppTheme.caption.copyWith(
-                      color: AppTheme.textPrimary.withOpacity(0.8),
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                      fontSize: 10,
-                    ),
+                    style:
+                        textStyle ??
+                        AppTheme.caption.copyWith(
+                          color: AppTheme.textPrimary.withOpacity(0.8),
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                          fontSize: 10,
+                        ),
                   )
                 : null,
           ),

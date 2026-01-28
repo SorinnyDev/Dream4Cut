@@ -37,14 +37,26 @@ class AppTheme {
     Color(0xFF00CED1), // 강조 시안
   ];
 
+  /// 배경색에 대응하는 딥 뮤트(Deep Muted) 텍스트/강조 색상
+  static const List<Color> deepMutedColors = [
+    Color(0xFF8B4D55), // 핑크 -> 딥 로즈
+    Color(0xFF8B6B4D), // 피치 -> 딥 브라운
+    Color(0xFF8B8B4D), // 옐로우 -> 딥 올리브
+    Color(0xFF4D8B6B), // 민트 -> 딥 포레스트
+    Color(0xFF4D6B8B), // 블루 -> 딥 네이비
+    Color(0xFF6B4D8B), // 라벤더 -> 딥 퍼플
+    Color(0xFF8B4D6B), // 로즈 -> 딥 플럼
+    Color(0xFF4D8B8B), // 시안 -> 딥 틸
+  ];
+
   /// 마스킹 테이프 색상
   static const Color maskingTape = Color(0xFFFFD6A5);
   static const Color maskingTapeLight = Color(0xFFFFF0DB);
 
-  /// 텍스트 색상
-  static const Color textPrimary = Color(0xFF1A1A1A); // 더 진한 차콜
-  static const Color textSecondary = Color(0xFF4A4A4A);
-  static const Color textTertiary = Color(0xFF888888);
+  /// 텍스트 색상 (완전한 블랙 금지)
+  static const Color textPrimary = Color(0xFF2C2C2C); // 딥 차콜
+  static const Color textSecondary = Color(0xFF5A5A5A); // 미디엄 차콜
+  static const Color textTertiary = Color(0xFF8E8E8E); // 라이트 차콜
 
   /// 연필/경계선 색상
   static const Color pencilCharcoal = Color(0xFF333333); // 경계선용 진한 색
@@ -66,24 +78,24 @@ class AppTheme {
 
   static const TextStyle headingLarge = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 28,
-    fontWeight: FontWeight.w700,
+    fontSize: 30,
+    fontWeight: FontWeight.w900, // 더 굵게 (Extra Bold)
     color: textPrimary,
     height: 1.4,
   );
 
   static const TextStyle headingMedium = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 22,
-    fontWeight: FontWeight.w600,
+    fontSize: 24,
+    fontWeight: FontWeight.w800, // 더 굵게 (Bold)
     color: textPrimary,
     height: 1.4,
   );
 
   static const TextStyle headingSmall = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 18,
-    fontWeight: FontWeight.w600,
+    fontSize: 19,
+    fontWeight: FontWeight.w800,
     color: textPrimary,
     height: 1.4,
   );
@@ -91,7 +103,7 @@ class AppTheme {
   static const TextStyle bodyLarge = TextStyle(
     fontFamily: fontFamily,
     fontSize: 16,
-    fontWeight: FontWeight.w400,
+    fontWeight: FontWeight.w500, // Medium으로 상향
     color: textPrimary,
     height: 1.6,
   );
@@ -107,7 +119,7 @@ class AppTheme {
   static const TextStyle bodySmall = TextStyle(
     fontFamily: fontFamily,
     fontSize: 12,
-    fontWeight: FontWeight.w400,
+    fontWeight: FontWeight.w300, // 더 가늘게 (Light)
     color: textSecondary,
     height: 1.5,
   );
@@ -115,7 +127,7 @@ class AppTheme {
   static const TextStyle caption = TextStyle(
     fontFamily: fontFamily,
     fontSize: 11,
-    fontWeight: FontWeight.w400,
+    fontWeight: FontWeight.w300, // 더 가늘게 (Light)
     color: textTertiary,
     height: 1.4,
   );
@@ -183,6 +195,16 @@ class AppTheme {
         titleTextStyle: headingMedium,
         iconTheme: IconThemeData(color: textPrimary),
       ),
+      // TextField 테마 고도화
+      inputDecorationTheme: InputDecorationTheme(
+        hintStyle: bodyMedium.copyWith(color: textTertiary.withOpacity(0.6)),
+        enabledBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: textSecondary, width: 1.2),
+        ),
+        focusedBorder: const UnderlineInputBorder(
+          borderSide: BorderSide(color: textPrimary, width: 2.0),
+        ),
+      ),
     );
   }
 
@@ -194,6 +216,20 @@ class AppTheme {
   /// 강조 컬러 선택 (인덱스 기반)
   static Color getAccentColor(int index) {
     return accentColors[index % accentColors.length];
+  }
+
+  /// 딥 뮤트 컬러 선택 (인덱스 기반)
+  static Color getDeepMutedColor(int index) {
+    return deepMutedColors[index % deepMutedColors.length];
+  }
+
+  /// 테마 이름으로 인덱스 찾기 (예: color_0 -> 0)
+  static int getThemeIndex(String theme) {
+    try {
+      return int.parse(theme.split('_').last);
+    } catch (_) {
+      return 0;
+    }
   }
 
   /// 책갈피 컬러 선택 (인덱스 기반)

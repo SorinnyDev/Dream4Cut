@@ -69,21 +69,11 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                         hintStyle: AppTheme.bodyMedium.copyWith(
                           color: AppTheme.textTertiary.withOpacity(0.4),
                         ),
-                        border: UnderlineInputBorder(
-                          borderSide: BorderSide(
-                            color: AppTheme.pencilCharcoal.withOpacity(0.2),
-                          ),
-                        ),
-                        focusedBorder: const UnderlineInputBorder(
-                          borderSide: BorderSide(
-                            color: AppTheme.pencilCharcoal,
-                            width: 2,
-                          ),
-                        ),
+                        // AppTheme의 InputTheme을 사용하도록 간소화
                       ),
                       style: AppTheme.headingMedium.copyWith(
                         color: AppTheme.textPrimary,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
                     const SizedBox(height: 48),
@@ -102,6 +92,7 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                         index,
                       ) {
                         final isSelected = _selectedThemeIndex == index;
+                        final deepColor = AppTheme.getDeepMutedColor(index);
                         return Bounceable(
                           onTap: () =>
                               setState(() => _selectedThemeIndex = index),
@@ -115,15 +106,14 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: isSelected
-                                    ? AppTheme.pencilCharcoal
+                                    ? deepColor
                                     : Colors.transparent,
-                                width: 2,
+                                width: 2.5,
                               ),
                               boxShadow: isSelected
                                   ? [
                                       BoxShadow(
-                                        color: AppTheme.pencilCharcoal
-                                            .withOpacity(0.2),
+                                        color: deepColor.withOpacity(0.2),
                                         offset: const Offset(2, 2),
                                         blurRadius: 0,
                                       ),
@@ -131,11 +121,7 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                                   : null,
                             ),
                             child: isSelected
-                                ? const Icon(
-                                    Icons.check,
-                                    color: AppTheme.pencilCharcoal,
-                                    size: 20,
-                                  )
+                                ? Icon(Icons.check, color: deepColor, size: 20)
                                 : null,
                           ),
                         );
@@ -147,13 +133,15 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                         onTap: _isSaving ? null : _saveGoal,
                         child: Container(
                           width: double.infinity,
-                          height: 56,
+                          height: 60,
                           decoration: BoxDecoration(
-                            color: AppTheme.pencilCharcoal,
-                            borderRadius: BorderRadius.circular(12),
+                            color: AppTheme.getDeepMutedColor(
+                              _selectedThemeIndex,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
+                                color: Colors.black.withOpacity(0.15),
                                 offset: const Offset(2, 2),
                                 blurRadius: 0,
                               ),
