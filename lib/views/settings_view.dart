@@ -10,30 +10,32 @@ class SettingsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.ivoryPaper,
-      body: ListView(
-        padding: const EdgeInsets.all(AppTheme.spacingL),
-        children: [
-          const SizedBox(height: AppTheme.spacingXl),
-          Text('내 서랍', style: AppTheme.headingLarge),
-          const SizedBox(height: AppTheme.spacingL),
-          _buildSettingsItem(
-            context,
-            Icons.inventory_2_rounded,
-            '보관된 목표 (서랍)',
-            onTap: () => Navigator.push(
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(AppTheme.spacingL),
+          children: [
+            const SizedBox(height: AppTheme.spacingXl),
+            Text('내 서랍', style: AppTheme.headingLarge),
+            const SizedBox(height: AppTheme.spacingL),
+            _buildSettingsItem(
               context,
-              MaterialPageRoute(builder: (_) => const ArchivedGoalsView()),
+              Icons.inventory_2_rounded,
+              '보관된 목표 (서랍)',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ArchivedGoalsView()),
+              ),
             ),
-          ),
-          _buildSettingsItem(context, Icons.palette_outlined, '테마 설정'),
-          _buildSettingsItem(
-            context,
-            Icons.notifications_none_rounded,
-            '기록 알림',
-          ),
-          _buildSettingsItem(context, Icons.cloud_upload_outlined, '데이터 백업'),
-          _buildSettingsItem(context, Icons.info_outline_rounded, '앱 정보'),
-        ],
+            _buildSettingsItem(context, Icons.palette_outlined, '테마 설정'),
+            _buildSettingsItem(
+              context,
+              Icons.notifications_none_rounded,
+              '기록 알림',
+            ),
+            _buildSettingsItem(context, Icons.cloud_upload_outlined, '데이터 백업'),
+            _buildSettingsItem(context, Icons.info_outline_rounded, '앱 정보'),
+          ],
+        ),
       ),
     );
   }

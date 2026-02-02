@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import '../theme/app_theme.dart';
 import 'analog_widgets.dart';
 
 /// 인화지 위젯 (Stamp Sheet)
-///
-/// 200칸 그리드로 구성된 실천 기록 인화지
-/// - 10x20 그리드 (가로 10칸, 세로 20칸)
-/// - 각 칸은 파스텔 톤으로 채워짐
-/// - 종이 질감과 현상 효과 애니메이션
 class StampSheet extends StatefulWidget {
   final int sheetNumber; // 인화지 번호 (1-based)
   final int filledCount; // 채워진 칸 개수 (0~200)
@@ -31,24 +27,20 @@ class _StampSheetState extends State<StampSheet>
   late AnimationController _animationController;
   late Animation<double> _opacityAnimation;
 
-  static const int gridColumns = 10; // 가로 칸 수
-  static const int gridRows = 20; // 세로 칸 수
-  static const int totalCells = gridColumns * gridRows; // 200칸
+  static const int gridColumns = 10;
+  static const int gridRows = 20;
+  static const int totalCells = gridColumns * gridRows;
 
   @override
   void initState() {
     super.initState();
-
-    // 현상 효과 애니메이션 설정
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-
     _opacityAnimation = Tween<double>(begin: 0.3, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-
     if (widget.showAnimation) {
       _animationController.forward();
     } else {
@@ -69,22 +61,15 @@ class _StampSheetState extends State<StampSheet>
       builder: (context, child) {
         return Opacity(opacity: _opacityAnimation.value, child: child);
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(AppTheme.radiusM),
-          boxShadow: AppTheme.paperShadow,
-        ),
+      child: HandDrawnContainer(
+        backgroundColor: Colors.white,
+        borderColor: AppTheme.pencilCharcoal.withOpacity(0.1),
+        padding: EdgeInsets.zero,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 인화지 헤더
             _buildSheetHeader(),
-
-            // 200칸 그리드
             _buildStampGrid(),
-
-            // 인화지 푸터 (진행률)
             _buildSheetFooter(),
           ],
         ),
@@ -92,47 +77,36 @@ class _StampSheetState extends State<StampSheet>
     );
   }
 
-  /// 인화지 헤더 (목표 상태 표시)
   Widget _buildSheetHeader() {
     final themeIndex = AppTheme.getThemeIndex(widget.theme);
-    final deepMutedColor = AppTheme.getDeepMutedColor(themeIndex);
+    final themeSet = AppTheme.getGoalTheme(themeIndex);
 
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppTheme.spacingM,
-        vertical: AppTheme.spacingS,
+        vertical: 24, // 여유 있게 배치
       ),
       decoration: BoxDecoration(
-        color: AppTheme.getPastelColor(themeIndex).withOpacity(0.3),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(AppTheme.radiusM),
-          topRight: Radius.circular(AppTheme.radiusM),
-        ),
+        color: themeSet.background.withOpacity(0.5),
         border: Border(
-          bottom: BorderSide(
-            color: deepMutedColor.withOpacity(0.1),
-            width: 0.5,
-          ),
+          bottom: BorderSide(color: themeSet.text.withOpacity(0.1), width: 0.5),
         ),
       ),
       child: Center(
         child: MaskingTape(
           text: '목표를 향해 걷는 중',
-          width: 140,
-          height: 32,
           rotation: -0.02,
-          color: AppTheme.getPastelColor(themeIndex),
-          textStyle: AppTheme.bodySmall.copyWith(
+          color: themeSet.point,
+          textStyle: AppTheme.bodyMedium.copyWith(
             fontWeight: FontWeight.w900,
-            color: deepMutedColor,
-            letterSpacing: 1.0,
+            color: themeSet.text.withOpacity(0.8), // 포인트 컬러의 어두운 톤 사용
+            letterSpacing: 1.2,
           ),
         ),
       ),
     );
   }
 
-  /// 200칸 스탬프 그리드
   Widget _buildStampGrid() {
     final int rowCount = ((widget.filledCount / gridColumns).floor() + 1).clamp(
       1,
@@ -159,53 +133,59 @@ class _StampSheetState extends State<StampSheet>
     );
   }
 
-  /// 개별 스탬프 칸
   Widget _buildStampCell(int index, bool isFilled) {
     final themeIndex = AppTheme.getThemeIndex(widget.theme);
-    final deepMutedColor = AppTheme.getDeepMutedColor(themeIndex);
+    final themeSet = AppTheme.getGoalTheme(themeIndex);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isFilled
-            ? AppTheme.getAccentColor(index)
-            : AppTheme.ivoryPaper.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(1),
-        border: Border.all(
+    // 개별 도장의 불규칙성을 위한 랜덤값 (인덱스를 시드로 고정)
+    final cellRandom = math.Random(index + widget.sheetNumber * 100);
+    final stampRotation = (cellRandom.nextDouble() - 0.5) * 0.4; // 최대 약 11도 회전
+    final inkOpacity = 0.6 + (cellRandom.nextDouble() * 0.4); // 0.6 ~ 1.0 사이 농도
+
+    return Transform.rotate(
+      angle: isFilled ? stampRotation : 0,
+      child: Container(
+        decoration: BoxDecoration(
           color: isFilled
-              ? deepMutedColor.withOpacity(0.5)
-              : AppTheme.pencilCharcoal.withOpacity(0.1),
-          width: 0.8,
+              ? themeSet.point.withOpacity(0.3 * inkOpacity)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(1),
+          border: Border.all(
+            color: isFilled
+                ? themeSet.point.withOpacity(0.5 * inkOpacity)
+                : themeSet.point.withOpacity(0.1),
+            width: 0.8,
+          ),
         ),
+        child: isFilled
+            ? LayoutBuilder(
+                builder: (context, constraints) {
+                  return Center(
+                    child: Opacity(
+                      opacity: inkOpacity,
+                      child: Icon(
+                        Icons.check,
+                        size: constraints.maxWidth * 0.8,
+                        color: themeSet.point.withOpacity(0.8),
+                      ),
+                    ),
+                  );
+                },
+              )
+            : null,
       ),
-      child: isFilled
-          ? LayoutBuilder(
-              builder: (context, constraints) {
-                return Center(
-                  child: Icon(
-                    Icons.check,
-                    size: constraints.maxWidth * 0.8,
-                    color: Colors.white,
-                  ),
-                );
-              },
-            )
-          : null,
     );
   }
 
-  /// 인화지 푸터 (그냥 여백으로 대체)
   Widget _buildSheetFooter() {
-    return const SizedBox(height: AppTheme.spacingS);
+    return const SizedBox(height: AppTheme.spacingM);
   }
 }
 
-/// 인화지 스택 위젯 (여러 인화지를 쌓아서 표시)
-///
-/// 책갈피 시스템으로 과거 인화지 조회 가능
 class StampSheetStack extends StatefulWidget {
-  final int totalCount; // 전체 누적 횟수
-  final String theme; // 배경 테마
-  final Function(int sheetNumber)? onSheetChanged; // 인화지 변경 콜백
+  final int totalCount;
+  final String theme;
+  final Function(int sheetNumber)? onSheetChanged;
 
   const StampSheetStack({
     Key? key,
@@ -237,25 +217,17 @@ class _StampSheetStackState extends State<StampSheetStack> {
     }
   }
 
-  int _getCurrentSheetNumber() {
-    return (widget.totalCount ~/ 200) + 1;
-  }
+  int _getCurrentSheetNumber() => (widget.totalCount ~/ 200) + 1;
 
   int _getFilledCountForSheet(int sheetNumber) {
-    if (sheetNumber < _getCurrentSheetNumber()) {
-      return 200; // 완성된 인화지
-    } else if (sheetNumber == _getCurrentSheetNumber()) {
-      return widget.totalCount % 200; // 현재 진행 중인 인화지
-    } else {
-      return 0; // 미래 인화지
-    }
+    if (sheetNumber < _getCurrentSheetNumber()) return 200;
+    if (sheetNumber == _getCurrentSheetNumber()) return widget.totalCount % 200;
+    return 0;
   }
 
   void _changeSheet(int sheetNumber) {
     if (sheetNumber >= 1 && sheetNumber <= _getCurrentSheetNumber()) {
-      setState(() {
-        _currentSheetNumber = sheetNumber;
-      });
+      setState(() => _currentSheetNumber = sheetNumber);
       widget.onSheetChanged?.call(sheetNumber);
     }
   }
@@ -263,15 +235,10 @@ class _StampSheetStackState extends State<StampSheetStack> {
   @override
   Widget build(BuildContext context) {
     final totalSheets = _getCurrentSheetNumber();
-
     return Column(
       children: [
-        // 책갈피 네비게이션
         if (totalSheets > 1) _buildBookmarkNavigation(totalSheets),
-
         const SizedBox(height: AppTheme.spacingM),
-
-        // 현재 선택된 인화지
         StampSheet(
           sheetNumber: _currentSheetNumber,
           filledCount: _getFilledCountForSheet(_currentSheetNumber),
@@ -282,7 +249,6 @@ class _StampSheetStackState extends State<StampSheetStack> {
     );
   }
 
-  /// 책갈피 네비게이션
   Widget _buildBookmarkNavigation(int totalSheets) {
     return SizedBox(
       height: 50,
@@ -292,6 +258,7 @@ class _StampSheetStackState extends State<StampSheetStack> {
         itemBuilder: (context, index) {
           final sheetNumber = index + 1;
           final isSelected = sheetNumber == _currentSheetNumber;
+          final bookmarkColor = AppTheme.getBookmarkColor(index);
 
           return GestureDetector(
             onTap: () => _changeSheet(sheetNumber),
@@ -303,13 +270,12 @@ class _StampSheetStackState extends State<StampSheetStack> {
               ),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppTheme.getBookmarkColor(index)
-                    : AppTheme.getBookmarkColor(index).withOpacity(0.3),
+                    ? bookmarkColor
+                    : bookmarkColor.withOpacity(0.3),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(AppTheme.radiusS),
                   topRight: Radius.circular(AppTheme.radiusS),
                 ),
-                boxShadow: isSelected ? AppTheme.cardShadow : null,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -323,12 +289,6 @@ class _StampSheetStackState extends State<StampSheetStack> {
                       color: isSelected ? Colors.white : AppTheme.textSecondary,
                     ),
                   ),
-                  if (sheetNumber < totalSheets)
-                    Icon(
-                      Icons.check_circle,
-                      size: 12,
-                      color: Colors.white.withOpacity(0.8),
-                    ),
                 ],
               ),
             ),

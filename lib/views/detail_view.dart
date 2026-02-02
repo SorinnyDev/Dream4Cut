@@ -65,15 +65,27 @@ class _DetailViewState extends State<DetailView>
       orElse: () => widget.goal,
     );
 
+    final themeIndex = AppTheme.getThemeIndex(currentGoal.backgroundTheme);
+    final themeSet = AppTheme.getGoalTheme(themeIndex);
+
     return Scaffold(
       backgroundColor: AppTheme.ivoryPaper,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: Text(
           currentGoal.title,
-          style: AppTheme.headingSmall.copyWith(fontWeight: FontWeight.w900),
+          style: AppTheme.headingSmall.copyWith(
+            fontWeight: FontWeight.w900,
+            color: themeSet.text,
+          ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 20,
+            color: themeSet.text,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
@@ -83,175 +95,166 @@ class _DetailViewState extends State<DetailView>
               child: Center(
                 child: Bounceable(
                   onTap: _triggerCompletion,
-                  child: const MaskingTape(
+                  child: MaskingTape(
                     text: '완성하기',
-                    width: 70,
-                    height: 32,
                     rotation: 0.05,
+                    color: themeSet.point,
+                    textStyle: AppTheme.caption.copyWith(
+                      color: themeSet.text.withOpacity(0.8),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
             ),
         ],
       ),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      const SizedBox(height: AppTheme.spacingM),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppTheme.spacingL,
-                        ),
-                        child: StampSheetStack(
-                          totalCount: currentGoal.totalCount,
-                          theme: currentGoal.backgroundTheme,
-                        ),
-                      ),
-                      const SizedBox(height: AppTheme.spacingL),
-
-                      // Log Input Section
-                      if (currentGoal.status == GoalStatus.active)
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // 전체 배경 종이 질감 오버레이
+            Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(painter: PaperTexturePainter()),
+              ),
+            ),
+            Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: AppTheme.spacingM),
                         Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: AppTheme.spacingL,
                           ),
-                          child: Container(
-                            padding: const EdgeInsets.all(AppTheme.spacingM),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              boxShadow: AppTheme.paperShadow,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: AppTheme.getDeepMutedColor(
-                                  AppTheme.getThemeIndex(
-                                    currentGoal.backgroundTheme,
-                                  ),
-                                ).withOpacity(0.15),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.edit_note,
-                                      color: AppTheme.getDeepMutedColor(
-                                        AppTheme.getThemeIndex(
-                                          currentGoal.backgroundTheme,
-                                        ),
-                                      ),
-                                      size: 22,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _logController,
-                                        maxLines: null,
-                                        decoration: InputDecoration(
-                                          hintText: '오늘의 조각을 기록하세요...',
-                                          hintStyle: AppTheme.bodyMedium
-                                              .copyWith(
-                                                color: AppTheme.textTertiary
-                                                    .withOpacity(0.4),
-                                              ),
-                                          border: InputBorder.none,
-                                          isDense: true,
-                                        ),
-                                        style: AppTheme.bodyLarge.copyWith(
-                                          fontWeight: FontWeight.w800,
-                                          color: AppTheme.textPrimary,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Container(
-                                  height: 1.5,
-                                  width: double.infinity,
-                                  margin: const EdgeInsets.only(top: 4),
-                                  color: AppTheme.getDeepMutedColor(
-                                    AppTheme.getThemeIndex(
-                                      currentGoal.backgroundTheme,
-                                    ),
-                                  ).withOpacity(0.4),
-                                ),
-                              ],
-                            ),
+                          child: StampSheetStack(
+                            totalCount: currentGoal.totalCount,
+                            theme: currentGoal.backgroundTheme,
                           ),
                         ),
+                        const SizedBox(height: AppTheme.spacingL),
 
-                      const SizedBox(height: AppTheme.spacingL),
-                      _buildDashedDivider(),
-                      const SizedBox(height: AppTheme.spacingL),
-
-                      // Logs Timeline
-                      _buildLogsHistory(currentGoal),
-                      const SizedBox(height: 120), // Space for bottom button
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          // Fixed Bottom Button
-          if (currentGoal.status == GoalStatus.active)
-            Positioned(
-              left: 20,
-              right: 20,
-              bottom: 30,
-              child: Bounceable(
-                onTap: _isSaving ? null : _saveLog,
-                child: Container(
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: AppTheme.getDeepMutedColor(
-                      AppTheme.getThemeIndex(currentGoal.backgroundTheme),
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        offset: const Offset(2, 2),
-                        blurRadius: 0,
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: _isSaving
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
+                        // Log Input Section (Sketchy Diary Input)
+                        if (currentGoal.status == GoalStatus.active)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppTheme.spacingL,
                             ),
-                          )
-                        : Text(
-                            '기록하기',
-                            style: AppTheme.headingSmall.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 2.0,
+                            child: HandDrawnContainer(
+                              backgroundColor: Colors.white.withOpacity(0.8),
+                              borderColor: themeSet.point.withOpacity(0.4),
+                              padding: const EdgeInsets.all(AppTheme.spacingM),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.edit_note_rounded,
+                                        color: themeSet.point,
+                                        size: 24,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: TextField(
+                                          controller: _logController,
+                                          maxLines: null,
+                                          decoration: InputDecoration(
+                                            hintText: '오늘의 조각을 기록하세요...',
+                                            hintStyle: AppTheme.bodyMedium
+                                                .copyWith(
+                                                  color: themeSet.text
+                                                      .withOpacity(0.3),
+                                                ),
+                                            border: InputBorder.none,
+                                            isDense: true,
+                                          ),
+                                          style: AppTheme.bodyLarge.copyWith(
+                                            color: themeSet.text,
+                                            height: 1.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  // Underline effect
+                                  Container(
+                                    height: 1,
+                                    width: double.infinity,
+                                    color: themeSet.point.withOpacity(0.3),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
+
+                        const SizedBox(height: AppTheme.spacingL),
+                        _buildDashedDivider(),
+                        const SizedBox(height: AppTheme.spacingL),
+
+                        // Logs Timeline
+                        _buildLogsHistory(currentGoal, themeSet),
+                        const SizedBox(height: 120), // Space for bottom button
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            // Fixed Bottom Button
+            if (currentGoal.status == GoalStatus.active)
+              Positioned(
+                left: 20,
+                right: 20,
+                bottom: 20 + MediaQuery.of(context).padding.bottom,
+                child: Bounceable(
+                  onTap: _isSaving ? null : _saveLog,
+                  child: HandDrawnContainer(
+                    backgroundColor: themeSet.point,
+                    borderColor: themeSet.text.withOpacity(0.2),
+                    padding: EdgeInsets.zero,
+                    child: Container(
+                      height: 60,
+                      alignment: Alignment.center,
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text(
+                              '기록 저장하기',
+                              style: AppTheme.headingSmall.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 2.0,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    offset: const Offset(1, 1),
+                                  ),
+                                ],
+                              ),
+                            ),
+                    ),
                   ),
                 ),
               ),
-            ),
 
-          if (_showCompletionOverlay)
-            _CompletionOverlay(
-              goal: currentGoal,
-              onClose: () => Navigator.pop(context, true),
-            ),
-        ],
+            if (_showCompletionOverlay)
+              _CompletionOverlay(
+                goal: currentGoal,
+                onClose: () => Navigator.pop(context, true),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -274,7 +277,7 @@ class _DetailViewState extends State<DetailView>
     );
   }
 
-  Widget _buildLogsHistory(Goal currentGoal) {
+  Widget _buildLogsHistory(Goal currentGoal, GoalThemeSet themeSet) {
     return FutureBuilder<List<Log>>(
       future: context.read<GoalProvider>().getLogs(currentGoal.id),
       builder: (context, snapshot) {
@@ -302,8 +305,10 @@ class _DetailViewState extends State<DetailView>
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildDateHeader(dateKey),
-                ...logsForDate.map((log) => _buildLogItem(log)).toList(),
+                _buildDateHeader(dateKey, themeSet),
+                ...logsForDate
+                    .map((log) => _buildLogItem(log, themeSet))
+                    .toList(),
                 const SizedBox(height: AppTheme.spacingL),
               ],
             );
@@ -313,28 +318,28 @@ class _DetailViewState extends State<DetailView>
     );
   }
 
-  Widget _buildDateHeader(String dateKey) {
+  Widget _buildDateHeader(String dateKey, GoalThemeSet themeSet) {
     return Padding(
       padding: const EdgeInsets.only(left: 24, bottom: 8),
       child: Text(
         dateKey.replaceAll('-', ' . '),
         style: AppTheme.caption.copyWith(
           fontWeight: FontWeight.w900,
-          color: AppTheme.pencilCharcoal.withOpacity(0.5),
+          color: themeSet.text.withOpacity(0.5),
           letterSpacing: 1.2,
         ),
       ),
     );
   }
 
-  Widget _buildLogItem(Log log) {
+  Widget _buildLogItem(Log log, GoalThemeSet themeSet) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: AppTheme.pencilCharcoal.withOpacity(0.05)),
+        border: Border.all(color: themeSet.text.withOpacity(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,8 +349,8 @@ class _DetailViewState extends State<DetailView>
               Container(
                 width: 6,
                 height: 6,
-                decoration: const BoxDecoration(
-                  color: AppTheme.pencilCharcoal,
+                decoration: BoxDecoration(
+                  color: themeSet.point,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -355,7 +360,7 @@ class _DetailViewState extends State<DetailView>
                 style: AppTheme.caption.copyWith(
                   fontWeight: FontWeight.w900,
                   fontSize: 10,
-                  color: AppTheme.textSecondary,
+                  color: themeSet.text.withOpacity(0.6),
                 ),
               ),
             ],
@@ -364,7 +369,7 @@ class _DetailViewState extends State<DetailView>
           Text(
             log.content,
             style: AppTheme.bodyMedium.copyWith(
-              color: AppTheme.textPrimary,
+              color: themeSet.text,
               height: 1.5,
             ),
           ),
@@ -455,11 +460,17 @@ class _CompletionOverlay extends StatelessWidget {
             const SizedBox(height: 60),
             Bounceable(
               onTap: onClose,
-              child: const MaskingTape(
+              child: MaskingTape(
                 text: '수집 보관함으로',
-                width: 140,
-                height: 44,
-                color: AppTheme.maskingTape,
+                height: 48,
+                color: AppTheme.getGoalTheme(themeIndex).point,
+                textStyle: AppTheme.bodyMedium.copyWith(
+                  color: AppTheme.getGoalTheme(
+                    themeIndex,
+                  ).text.withOpacity(0.8),
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.0,
+                ),
               ),
             ),
           ],

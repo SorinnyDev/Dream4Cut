@@ -33,67 +33,76 @@ class _HomeViewState extends State<HomeView> {
           final frameCount = maxFrameIndex + 2;
 
           return SafeArea(
-            child: Column(
+            child: Stack(
               children: [
-                // Condensed Header
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: AppTheme.spacingM,
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'DREAM 4 CUT',
-                        style: AppTheme.headingMedium.copyWith(
-                          letterSpacing: 4.0,
-                          fontWeight: FontWeight.w900,
-                          color: AppTheme.textPrimary,
-                        ),
-                      ),
-                      Container(
-                        width: 40,
-                        height: 2,
-                        margin: const EdgeInsets.only(top: 4),
-                        color: AppTheme.pencilCharcoal.withOpacity(0.3),
-                      ),
-                    ],
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: CustomPaint(painter: PaperTexturePainter()),
                   ),
                 ),
+                Column(
+                  children: [
+                    // Condensed Header
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppTheme.spacingM,
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            'DREAM 4 CUT',
+                            style: AppTheme.headingMedium.copyWith(
+                              letterSpacing: 4.0,
+                              fontWeight: FontWeight.w900,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                          Container(
+                            width: 40,
+                            height: 2,
+                            margin: const EdgeInsets.only(top: 4),
+                            color: AppTheme.pencilCharcoal.withOpacity(0.3),
+                          ),
+                        ],
+                      ),
+                    ),
 
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    onPageChanged: (index) =>
-                        setState(() => _currentPage = index),
-                    itemCount: frameCount,
-                    itemBuilder: (context, frameIndex) {
-                      return _buildFrame(provider, frameIndex);
-                    },
-                  ),
-                ),
+                    Expanded(
+                      child: PageView.builder(
+                        controller: _pageController,
+                        onPageChanged: (index) =>
+                            setState(() => _currentPage = index),
+                        itemCount: frameCount,
+                        itemBuilder: (context, frameIndex) {
+                          return _buildFrame(provider, frameIndex);
+                        },
+                      ),
+                    ),
 
-                // Concise Indicators
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: AppTheme.spacingM,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(frameCount, (index) {
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: _currentPage == index ? 16 : 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: _currentPage == index
-                              ? AppTheme.pencilCharcoal
-                              : AppTheme.pencilCharcoal.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      );
-                    }),
-                  ),
+                    // Concise Indicators
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppTheme.spacingM,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(frameCount, (index) {
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: _currentPage == index ? 16 : 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: _currentPage == index
+                                  ? AppTheme.pencilCharcoal
+                                  : AppTheme.pencilCharcoal.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -115,7 +124,7 @@ class _HomeViewState extends State<HomeView> {
       ),
       child: HandDrawnContainer(
         padding: const EdgeInsets.all(12),
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.ivoryPaper,
         child: Column(
           children: List.generate(4, (slotIndex) {
             final goal = frameGoals.any((g) => g.slotIndex == slotIndex)
@@ -194,7 +203,7 @@ class _GoalFrameItem extends StatelessWidget {
     }
 
     final themeIndex = AppTheme.getThemeIndex(goal!.backgroundTheme);
-    final deepColor = AppTheme.getDeepMutedColor(themeIndex);
+    final themeSet = AppTheme.getGoalTheme(themeIndex);
 
     return Bounceable(
       onTap: () async {
@@ -206,49 +215,42 @@ class _GoalFrameItem extends StatelessWidget {
           context.read<GoalProvider>().setTabIndex(1);
         }
       },
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-        decoration: BoxDecoration(
-          color: AppTheme.getPastelColor(themeIndex).withOpacity(0.4),
-          borderRadius: BorderRadius.circular(2),
-          border: Border.all(color: deepColor.withOpacity(0.4), width: 1.2),
-          boxShadow: [
-            BoxShadow(
-              color: deepColor.withOpacity(0.1),
-              offset: const Offset(1.5, 1.5),
-              blurRadius: 0,
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(AppTheme.spacingM),
-              child: Center(
-                child: Text(
-                  goal!.title,
-                  style: AppTheme.headingSmall.copyWith(
-                    color: AppTheme.textPrimary,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 16,
+      child: Padding(
+        padding: const EdgeInsets.all(4.0),
+        child: HandDrawnContainer(
+          backgroundColor: themeSet.background,
+          borderColor: themeSet.text.withOpacity(0.2),
+          padding: EdgeInsets.zero,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(AppTheme.spacingM),
+                child: Center(
+                  child: Text(
+                    goal!.title,
+                    style: AppTheme.headingSmall.copyWith(
+                      color: themeSet.text,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 15,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-            ),
-            Positioned(
-              left: 8,
-              top: -2,
-              child: MaskingTape(
-                width: 35,
-                height: 10,
-                rotation: 0.1,
-                color: AppTheme.getPastelColor(themeIndex),
+              Positioned(
+                left: 10,
+                top: -6,
+                child: MaskingTape(
+                  rotation: 0.08,
+                  color: themeSet.point,
+                  opacity: 0.4, // 반투명 종이 테이프 느낌
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

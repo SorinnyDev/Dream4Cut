@@ -14,39 +14,48 @@ class FootstepsView extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppTheme.ivoryPaper,
       body: SafeArea(
-        child: Consumer<GoalProvider>(
-          builder: (context, provider, child) {
-            final completedGoals = provider.completedGoals;
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(painter: PaperTexturePainter()),
+              ),
+            ),
+            Consumer<GoalProvider>(
+              builder: (context, provider, child) {
+                final completedGoals = provider.completedGoals;
 
-            return DefaultTabController(
-              length: 2,
-              child: Column(
-                children: [
-                  const SizedBox(height: AppTheme.spacingM),
-                  TabBar(
-                    indicatorColor: AppTheme.textPrimary,
-                    labelColor: AppTheme.textPrimary,
-                    unselectedLabelColor: AppTheme.textTertiary,
-                    labelStyle: AppTheme.bodyLarge.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    tabs: const [
-                      Tab(text: '추억 앨범'),
-                      Tab(text: '나의 발걸음'),
+                return DefaultTabController(
+                  length: 2,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: AppTheme.spacingM),
+                      TabBar(
+                        indicatorColor: AppTheme.textPrimary,
+                        labelColor: AppTheme.textPrimary,
+                        unselectedLabelColor: AppTheme.textTertiary,
+                        labelStyle: AppTheme.bodyLarge.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        tabs: const [
+                          Tab(text: '추억 앨범'),
+                          Tab(text: '나의 발걸음'),
+                        ],
+                      ),
+                      Expanded(
+                        child: TabBarView(
+                          children: [
+                            _buildAlbumSection(completedGoals),
+                            _buildStatsSection(provider.goals),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                  Expanded(
-                    child: TabBarView(
-                      children: [
-                        _buildAlbumSection(completedGoals),
-                        _buildStatsSection(provider.goals),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -97,59 +106,58 @@ class FootstepsView extends StatelessWidget {
               itemBuilder: (context, gIndex) {
                 final goal = yearGoals[gIndex];
                 final themeIndex = AppTheme.getThemeIndex(goal.backgroundTheme);
-                final deepColor = AppTheme.getDeepMutedColor(themeIndex);
+                final themeSet = AppTheme.getGoalTheme(themeIndex);
 
-                return Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: AppTheme.cardShadow,
-                    border: Border.all(color: deepColor.withOpacity(0.1)),
-                  ),
+                return HandDrawnContainer(
+                  backgroundColor: themeSet.background,
+                  borderColor: themeSet.text.withOpacity(0.1),
+                  padding: EdgeInsets.zero,
                   child: Column(
                     children: [
                       Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.all(8),
-                          color: AppTheme.getPastelColor(
-                            themeIndex,
-                          ).withOpacity(0.2),
-                          child: Stack(
-                            children: [
-                              Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Text(
-                                    goal.title,
-                                    style: AppTheme.bodyMedium.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      color: deepColor,
-                                    ),
-                                    textAlign: TextAlign.center,
+                        child: Stack(
+                          children: [
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  goal.title,
+                                  style: AppTheme.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: themeSet.text,
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
                               ),
-                              Positioned(
-                                top: 0,
-                                left: 10,
-                                child: MaskingTape(
-                                  width: 40,
-                                  height: 12,
-                                  color: AppTheme.getPastelColor(themeIndex),
-                                ),
+                            ),
+                            Positioned(
+                              top: 0,
+                              left: 10,
+                              child: MaskingTape(
+                                rotation: -0.05,
+                                color: themeSet.point,
+                                opacity: 0.5,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
+                      // Sketchy Divider
+                      Container(
+                        height: 1,
+                        width: double.infinity,
+                        margin: const EdgeInsets.symmetric(horizontal: 10),
+                        color: themeSet.text.withOpacity(0.1),
+                      ),
                       Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
                         child: Text(
                           goal.completedAt != null
-                              ? DateFormat('MM.dd').format(goal.completedAt!)
-                              : '완성',
+                              ? DateFormat('yy.MM.dd').format(goal.completedAt!)
+                              : '',
                           style: AppTheme.caption.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: deepColor.withOpacity(0.6),
+                            color: themeSet.text.withOpacity(0.5),
                           ),
                         ),
                       ),
@@ -213,10 +221,12 @@ class FootstepsView extends StatelessWidget {
               final isFilled = index < (totalSteps % 200);
               return Container(
                 decoration: BoxDecoration(
-                  color: isFilled ? AppTheme.getPastelColor(0) : Colors.white,
+                  color: isFilled
+                      ? AppTheme.getGoalTheme(0).point.withOpacity(0.3)
+                      : Colors.white,
                   border: Border.all(
                     color: isFilled
-                        ? AppTheme.getDeepMutedColor(0).withOpacity(0.3)
+                        ? AppTheme.getGoalTheme(0).point.withOpacity(0.5)
                         : AppTheme.pencilDash.withOpacity(0.3),
                   ),
                   shape: BoxShape.circle,
