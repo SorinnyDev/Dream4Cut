@@ -96,49 +96,67 @@ class AppTheme {
   // 타이포그래피 (나눔명조 기반 아날로그 감성)
   static const String fontFamily = 'NanumMyeongjo';
 
-  static const TextStyle headingLarge = TextStyle(
+  static const TextStyle titleLarge = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: FontWeight.w900,
+    color: textPrimary,
+    height: 1.2,
+  );
+
+  static const TextStyle titleMedium = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 22,
+    fontWeight: FontWeight.w800,
     color: textPrimary,
     height: 1.3,
   );
-  static const TextStyle headingMedium = TextStyle(
+
+  static const TextStyle titleSmall = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: FontWeight.w800,
     color: textPrimary,
   );
-  static const TextStyle headingSmall = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 17,
-    fontWeight: FontWeight.w800,
-    color: textPrimary,
-  );
-  static const TextStyle bodyLarge = TextStyle(
+
+  static const TextStyle bodyBold = TextStyle(
     fontFamily: fontFamily,
     fontSize: 15,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w800,
     color: textPrimary,
   );
-  static const TextStyle bodyMedium = TextStyle(
+
+  static const TextStyle bodyRegular = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: FontWeight.w500,
-    color: textPrimary,
-  );
-  static const TextStyle bodySmall = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 12,
     color: textSecondary,
   );
-  static const TextStyle caption = TextStyle(
+
+  static const TextStyle bodyLight = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 13,
+    fontWeight: FontWeight.w400,
+    color: textSecondary,
+  );
+
+  static const TextStyle labelSmall = TextStyle(
     fontFamily: fontFamily,
     fontSize: 11,
+    fontWeight: FontWeight.w400,
     color: textTertiary,
   );
 
-  // 간격
+  // Backward Compatibility Aliases
+  static TextStyle get headingLarge => titleLarge;
+  static TextStyle get headingMedium => titleMedium;
+  static TextStyle get headingSmall => titleSmall;
+  static TextStyle get bodyLarge => bodyBold;
+  static TextStyle get bodyMedium => bodyRegular;
+  static TextStyle get bodySmall => bodyLight;
+  static TextStyle get caption => labelSmall;
+
+  // 간격 및 곡률
   static const double spacingS = 8.0;
   static const double spacingM = 16.0;
   static const double spacingL = 24.0;
@@ -157,7 +175,25 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: headingMedium,
+        titleTextStyle: titleSmall,
+        iconTheme: IconThemeData(color: textPrimary),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        border: UnderlineInputBorder(
+          borderSide: BorderSide(
+            color: pencilCharcoal.withOpacity(0.5),
+            width: 1.5,
+          ),
+        ),
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(
+            color: pencilCharcoal.withOpacity(0.3),
+            width: 1.0,
+          ),
+        ),
+        focusedBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: pencilCharcoal, width: 2.0),
+        ),
       ),
     );
   }

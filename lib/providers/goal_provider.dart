@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import '../models/goal.dart';
-import '../services/database_service.dart';
+import '../models/log.dart';
+import '../repositories/goal_repository.dart';
+import '../repositories/sqflite_goal_repository.dart';
 import 'package:uuid/uuid.dart';
 
-import '../models/log.dart';
-
 class GoalProvider with ChangeNotifier {
-  final DatabaseService _dbService = DatabaseService();
+  final GoalRepository _repository;
   List<Goal> _goals = [];
   bool _isLoading = true;
+  int _currentTabIndex = 0;
+
+  GoalProvider({GoalRepository? repository})
+    : _repository = repository ?? SqfliteGoalRepository() {
+    loadGoals();
+  }
 
   List<Goal> get goals => _goals;
   List<Goal> get activeGoals =>
@@ -18,48 +24,33 @@ class GoalProvider with ChangeNotifier {
   List<Goal> get archivedGoals =>
       _goals.where((g) => g.status == GoalStatus.archived).toList();
   bool get isLoading => _isLoading;
+  int get currentTabIndex => _currentTabIndex;
 
-  GoalProvider() {
-    loadGoals();
+  void setTabIndex(int index) {
+    _currentTabIndex = index;
+    notifyListeners();
   }
 
   Future<void> loadGoals() async {
     _isLoading = true;
     notifyListeners();
-    _goals = await _dbService.getGoals();
+    _goals = await _repository.getGoals();
     _isLoading = false;
     notifyListeners();
   }
 
-  Future<List<Log>> getLogs(String goalId) async {
-    return await _dbService.getLogsByGoalId(goalId);
+  Goal? getGoalAt(int frameIndex, int slotIndex) {
+    try {
+      return activeGoals.firstWhere(
+        (g) => g.frameIndex == frameIndex && g.slotIndex == slotIndex,
+      );
+    } catch (_) {
+      return null;
+    }
   }
 
-  Future<void> addLog(String goalId, String content) async {
-    final goalIndex = _goals.indexWhere((g) => g.id == goalId);
-    if (goalIndex != -1) {
-      final goal = _goals[goalIndex];
-      final newIndex = goal.totalCount + 1;
-
-      final newLog = Log(
-        id: const Uuid().v4(),
-        goalId: goalId,
-        content: content,
-        actionDate: DateTime.now(),
-        createdAt: DateTime.now(),
-        index: newIndex,
-      );
-
-      await _dbService.insertLog(newLog);
-
-      final updatedGoal = goal.copyWith(
-        totalCount: newIndex,
-        updatedAt: DateTime.now(),
-      );
-
-      await _dbService.updateGoal(updatedGoal);
-      await loadGoals();
-    }
+  Future<List<Log>> getLogs(String goalId) async {
+    return await _repository.getLogs(goalId);
   }
 
   Future<void> addGoal(
@@ -79,16 +70,35 @@ class GoalProvider with ChangeNotifier {
       frameIndex: frameIndex,
       slotIndex: slotIndex,
     );
-    await _dbService.insertGoal(newGoal);
+    await _repository.insertGoal(newGoal);
     await loadGoals();
   }
 
-  int _currentTabIndex = 0;
-  int get currentTabIndex => _currentTabIndex;
+  Future<void> addLog(String goalId, String content) async {
+    final goalIndex = _goals.indexWhere((g) => g.id == goalId);
+    if (goalIndex != -1) {
+      final goal = _goals[goalIndex];
+      final newIndex = goal.totalCount + 1;
 
-  void setTabIndex(int index) {
-    _currentTabIndex = index;
-    notifyListeners();
+      final newLog = Log(
+        id: const Uuid().v4(),
+        goalId: goalId,
+        content: content,
+        actionDate: DateTime.now(),
+        createdAt: DateTime.now(),
+        index: newIndex,
+      );
+
+      await _repository.insertLog(newLog);
+
+      final updatedGoal = goal.copyWith(
+        totalCount: newIndex,
+        updatedAt: DateTime.now(),
+      );
+
+      await _repository.updateGoal(updatedGoal);
+      await loadGoals();
+    }
   }
 
   Future<void> completeGoal(String id) async {
@@ -99,7 +109,7 @@ class GoalProvider with ChangeNotifier {
         completedAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
-      await _dbService.updateGoal(updatedGoal);
+      await _repository.updateGoal(updatedGoal);
       await loadGoals();
     }
   }
@@ -111,7 +121,7 @@ class GoalProvider with ChangeNotifier {
         status: GoalStatus.archived,
         updatedAt: DateTime.now(),
       );
-      await _dbService.updateGoal(updatedGoal);
+      await _repository.updateGoal(updatedGoal);
       await loadGoals();
     }
   }
@@ -119,13 +129,11 @@ class GoalProvider with ChangeNotifier {
   Future<void> restoreGoal(String id) async {
     final goalIndex = _goals.indexWhere((g) => g.id == id);
     if (goalIndex != -1) {
-      // 보관된 목표를 복원하면 발걸음(completed) 앨범으로 이동하거나 다시 활성화?
-      // 요청에 따르면 "서랍에서 복원하면 [발걸음] 탭의 앨범으로 이동"
       final updatedGoal = _goals[goalIndex].copyWith(
         status: GoalStatus.completed,
         updatedAt: DateTime.now(),
       );
-      await _dbService.updateGoal(updatedGoal);
+      await _repository.updateGoal(updatedGoal);
       await loadGoals();
     }
   }
@@ -137,7 +145,7 @@ class GoalProvider with ChangeNotifier {
         totalCount: newCount,
         updatedAt: DateTime.now(),
       );
-      await _dbService.updateGoal(updatedGoal);
+      await _repository.updateGoal(updatedGoal);
       await loadGoals();
     }
   }

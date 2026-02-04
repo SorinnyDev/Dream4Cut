@@ -35,8 +35,8 @@ class _GoalCreateViewState extends State<GoalCreateView> {
       backgroundColor: AppTheme.ivoryPaper,
       appBar: AppBar(
         title: Text(
-          '새 수집 목표',
-          style: AppTheme.headingSmall.copyWith(fontWeight: FontWeight.w900),
+          '나의 새로운 시작',
+          style: AppTheme.titleSmall.copyWith(fontWeight: FontWeight.w900),
         ),
         backgroundColor: Colors.transparent,
       ),
@@ -50,8 +50,7 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                   text: 'DREAM MEMO',
                   rotation: -0.02,
                   color: AppTheme.maskingTape,
-                  textStyle: AppTheme.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w900,
+                  textStyle: AppTheme.bodyBold.copyWith(
                     color: AppTheme.textPrimary.withOpacity(0.7),
                     letterSpacing: 1.5,
                   ),
@@ -66,7 +65,7 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                     children: [
                       Text(
                         '나의 새로운 발걸음은\n무엇인가요?',
-                        style: AppTheme.headingSmall.copyWith(
+                        style: AppTheme.titleSmall.copyWith(
                           fontWeight: FontWeight.w900,
                           height: 1.4,
                         ),
@@ -75,22 +74,20 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                       TextField(
                         controller: _titleController,
                         decoration: InputDecoration(
-                          hintText: '목표를 입력하세요 (예: 매일 만보 걷기)',
-                          hintStyle: AppTheme.bodyMedium.copyWith(
+                          hintText: '꿈의 이름을 알려주세요',
+                          hintStyle: AppTheme.bodyRegular.copyWith(
                             color: AppTheme.textTertiary.withOpacity(0.4),
                           ),
-                          // AppTheme의 InputTheme을 사용하도록 간소화
                         ),
-                        style: AppTheme.headingMedium.copyWith(
+                        style: AppTheme.titleMedium.copyWith(
                           color: AppTheme.textPrimary,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
                       const SizedBox(height: 48),
                       Text(
-                        '수집 테마',
-                        style: AppTheme.bodyLarge.copyWith(
-                          fontWeight: FontWeight.w900,
+                        '기록의 분위기',
+                        style: AppTheme.bodyBold.copyWith(
                           color: AppTheme.textSecondary,
                         ),
                       ),
@@ -118,17 +115,6 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                                       : themeSet.text.withOpacity(0.1),
                                   width: isSelected ? 2.5 : 1.2,
                                 ),
-                                boxShadow: isSelected
-                                    ? [
-                                        BoxShadow(
-                                          color: themeSet.text.withOpacity(
-                                            0.15,
-                                          ),
-                                          offset: const Offset(2, 2),
-                                          blurRadius: 0,
-                                        ),
-                                      ]
-                                    : null,
                               ),
                               child: isSelected
                                   ? Icon(
@@ -166,10 +152,9 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                                       ),
                                     )
                                   : Text(
-                                      '수집 목표 만들기',
-                                      style: AppTheme.headingSmall.copyWith(
+                                      '기록장 첫 장 시작하기',
+                                      style: AppTheme.bodyBold.copyWith(
                                         color: Colors.white,
-                                        fontWeight: FontWeight.w900,
                                         letterSpacing: 2.0,
                                       ),
                                     ),
@@ -189,12 +174,21 @@ class _GoalCreateViewState extends State<GoalCreateView> {
   }
 
   Future<void> _saveGoal() async {
-    if (_titleController.text.trim().isEmpty) return;
+    final title = _titleController.text.trim();
+    if (title.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('무엇을 수집할지 이름을 알려주세요!'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
     setState(() => _isSaving = true);
     try {
       await context.read<GoalProvider>().addGoal(
-        _titleController.text.trim(),
+        title,
         'theme_$_selectedThemeIndex',
         widget.frameIndex,
         widget.slotIndex,
@@ -204,7 +198,7 @@ class _GoalCreateViewState extends State<GoalCreateView> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('저장 실패: $e')));
+        ).showSnackBar(SnackBar(content: Text('기록 시작 실패: $e')));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);

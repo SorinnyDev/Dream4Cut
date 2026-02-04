@@ -113,16 +113,23 @@ class _StampSheetState extends State<StampSheet>
       gridRows,
     );
     final int visibleCells = rowCount * gridColumns;
+    final themeIndex = AppTheme.getThemeIndex(widget.theme);
+    final themeSet = AppTheme.getGoalTheme(themeIndex);
 
-    return Padding(
-      padding: const EdgeInsets.all(AppTheme.spacingM),
+    return Container(
+      margin: const EdgeInsets.all(AppTheme.spacingM),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: themeSet.background.withOpacity(0.3), // 그리드 영역 배경 구분
+        borderRadius: BorderRadius.circular(4),
+      ),
       child: GridView.builder(
         physics: const NeverScrollableScrollPhysics(),
         shrinkWrap: true,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: gridColumns,
-          mainAxisSpacing: 3,
-          crossAxisSpacing: 3,
+          mainAxisSpacing: 4,
+          crossAxisSpacing: 4,
         ),
         itemCount: visibleCells,
         itemBuilder: (context, index) {
@@ -139,41 +146,44 @@ class _StampSheetState extends State<StampSheet>
 
     // 개별 도장의 불규칙성을 위한 랜덤값 (인덱스를 시드로 고정)
     final cellRandom = math.Random(index + widget.sheetNumber * 100);
-    final stampRotation = (cellRandom.nextDouble() - 0.5) * 0.4; // 최대 약 11도 회전
-    final inkOpacity = 0.6 + (cellRandom.nextDouble() * 0.4); // 0.6 ~ 1.0 사이 농도
+    final stampRotation = (cellRandom.nextDouble() - 0.5) * 0.5; // 최대 약 14도 회전
+    final stampOffset = Offset(
+      (cellRandom.nextDouble() - 0.5) * 4,
+      (cellRandom.nextDouble() - 0.5) * 4,
+    );
+    final inkOpacity = 0.7 + (cellRandom.nextDouble() * 0.3); // 0.7 ~ 1.0
 
-    return Transform.rotate(
-      angle: isFilled ? stampRotation : 0,
-      child: Container(
-        decoration: BoxDecoration(
-          color: isFilled
-              ? themeSet.point.withOpacity(0.3 * inkOpacity)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(1),
-          border: Border.all(
-            color: isFilled
-                ? themeSet.point.withOpacity(0.5 * inkOpacity)
-                : themeSet.point.withOpacity(0.1),
-            width: 0.8,
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(2),
+        border: Border.all(
+          color: themeSet.text.withOpacity(isFilled ? 0.6 : 0.15),
+          width: 1.2, // 테두리 두께 1.2px로 강화
         ),
-        child: isFilled
-            ? LayoutBuilder(
-                builder: (context, constraints) {
-                  return Center(
-                    child: Opacity(
-                      opacity: inkOpacity,
-                      child: Icon(
-                        Icons.check,
-                        size: constraints.maxWidth * 0.8,
-                        color: themeSet.point.withOpacity(0.8),
-                      ),
-                    ),
-                  );
-                },
-              )
-            : null,
       ),
+      child: isFilled
+          ? Transform.translate(
+              offset: stampOffset,
+              child: Transform.rotate(
+                angle: stampRotation,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return Center(
+                      child: Opacity(
+                        opacity: inkOpacity,
+                        child: Icon(
+                          Icons.check,
+                          size: constraints.maxWidth * 0.9, // 도장 크기 살짝 키움
+                          color: themeSet.point.withOpacity(0.9),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            )
+          : null,
     );
   }
 
