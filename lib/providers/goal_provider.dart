@@ -57,8 +57,9 @@ class GoalProvider with ChangeNotifier {
     String title,
     String theme,
     int frameIndex,
-    int slotIndex,
-  ) async {
+    int slotIndex, {
+    String? timeCapsuleMessage,
+  }) async {
     final newGoal = Goal(
       id: const Uuid().v4(),
       title: title,
@@ -69,6 +70,7 @@ class GoalProvider with ChangeNotifier {
       status: GoalStatus.active,
       frameIndex: frameIndex,
       slotIndex: slotIndex,
+      timeCapsuleMessage: timeCapsuleMessage,
     );
     await _repository.insertGoal(newGoal);
     await loadGoals();

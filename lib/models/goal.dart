@@ -14,6 +14,7 @@ class Goal {
   final int frameIndex; // 0, 1, 2... (PageView의 페이지 인덱스)
   final int slotIndex; // 0, 1, 2, 3 (1x4 프레임 내 위치)
   final DateTime? completedAt;
+  final String? timeCapsuleMessage; // 미래의 나에게 보내는 응원 메세지
 
   Goal({
     required this.id,
@@ -26,6 +27,7 @@ class Goal {
     this.frameIndex = 0,
     this.slotIndex = 0,
     this.completedAt,
+    this.timeCapsuleMessage,
   });
 
   /// 현재 인화지 번호 (1-based)
@@ -51,6 +53,7 @@ class Goal {
     int? frameIndex,
     int? slotIndex,
     DateTime? completedAt,
+    String? timeCapsuleMessage,
   }) {
     return Goal(
       id: id ?? this.id,
@@ -63,6 +66,7 @@ class Goal {
       frameIndex: frameIndex ?? this.frameIndex,
       slotIndex: slotIndex ?? this.slotIndex,
       completedAt: completedAt ?? this.completedAt,
+      timeCapsuleMessage: timeCapsuleMessage ?? this.timeCapsuleMessage,
     );
   }
 
@@ -78,6 +82,7 @@ class Goal {
       'frameIndex': frameIndex,
       'slotIndex': slotIndex,
       'completedAt': completedAt?.toIso8601String(),
+      'timeCapsuleMessage': timeCapsuleMessage,
     };
   }
 
@@ -98,6 +103,7 @@ class Goal {
       completedAt: json['completedAt'] != null
           ? DateTime.parse(json['completedAt'] as String)
           : null,
+      timeCapsuleMessage: json['timeCapsuleMessage'] as String?,
     );
   }
 

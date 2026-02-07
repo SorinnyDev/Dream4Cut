@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Dream4Cut 앱 테마 - [Scrapbook & Retro Diary] 컨셉
 class AppTheme {
   // ============ 메인 배경: 종이 질감 (Paper Base) ============
   static const Color ivoryPaper = Color(0xFFF9F7F2); // 기본 종이색 (Eggshell)
   static const Color oatSilk = Color(0xFFF3E7D9); // 약간 더 차분한 종이색
-  static const Color vintagePaper = Color(0xFFF0EADC); // 빈티지한 종이색
+  static const Color champagneGold = Color(0xFFFFF9E3); // 성공 앨범 배경
+  static const Color archiveBeige = Color(0xFFE5E2D9); // 기록 보관소 배경
 
   // ============ 텍스트 및 선: 딥 차콜 (Pencil/Ink) ============
   static const Color textPrimary = Color(0xFF2C2C2C);
@@ -13,6 +15,26 @@ class AppTheme {
   static const Color textTertiary = Color(0xFF888888);
   static const Color pencilCharcoal = Color(0xFF333333);
   static const Color pencilDash = Color(0xFFDDDDDD);
+
+  /// 지능형 테두리 시스템: 포인트 컬러에 맞는 최적의 테두리색 반환
+  static Color getSmartBorderColor(Color pointColor) {
+    final hsv = HSVColor.fromColor(pointColor);
+    final hue = hsv.hue;
+    final saturation = hsv.saturation;
+
+    // Muted Color (Saturation < 0.25)
+    if (saturation < 0.25) {
+      return const Color(0xFF5D4037); // 중립적인 월넛 브라운
+    }
+
+    // Warm Color (Orange, Yellow, Red, Pink)
+    if (hue < 70 || hue > 320) {
+      return const Color(0xFF3E2723); // 붉은 기가 도는 딥 브라운
+    }
+
+    // Cold Color (Blue, Green, Teal)
+    return const Color(0xFF263238); // 푸른 기가 도는 다크 차콜
+  }
 
   // ============ 테마 세트 재구성 (포인트 컬러 중심) ============
   static const List<GoalThemeSet> goalThemes = [
@@ -69,32 +91,50 @@ class AppTheme {
   static const Color maskingTape = Color(0xFFFFD6A5);
 
   // ============ 스크랩북 디테일 (Offset Layers & Sketchy Lines) ============
+  // 모든 위젯에서 포인트 색상 그림자를 제거하고 실선으로 대체하기 위해 기존 그림자 투명도 조절
   static final List<BoxShadow> scrapbookShadow = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.06),
-      offset: const Offset(3, 3),
+      color: Colors.black.withOpacity(0.04), // 더욱 옅게
+      offset: const Offset(2, 2),
       blurRadius: 0,
     ),
   ];
 
-  static final List<BoxShadow> paperShadow = [
-    BoxShadow(
-      color: Colors.black.withOpacity(0.04),
-      offset: const Offset(1, 1),
-      blurRadius: 4,
-    ),
-  ];
+  static final List<BoxShadow> paperShadow = []; // 그림자 제거 대안
 
   static final List<BoxShadow> cardShadow = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.05),
-      offset: const Offset(0, 2),
-      blurRadius: 5,
+      color: Colors.black.withOpacity(0.03),
+      offset: const Offset(0, 1),
+      blurRadius: 3,
     ),
   ];
 
   // 타이포그래피 (나눔명조 기반 아날로그 감성)
   static const String fontFamily = 'NanumMyeongjo';
+
+  // 손글씨 폰트 스타일 (Nanum Pen Script - OFL License)
+  // Baseline 보정: height를 1.0으로 설정하여 상하 여백 최소화
+  static TextStyle handwritingLarge = GoogleFonts.nanumPenScript(
+    fontSize: 24,
+    fontWeight: FontWeight.w400,
+    color: textPrimary,
+    height: 1.0, // 베이스라인 보정
+  );
+
+  static TextStyle handwritingMedium = GoogleFonts.nanumPenScript(
+    fontSize: 18,
+    fontWeight: FontWeight.w400,
+    color: textPrimary,
+    height: 1.0,
+  );
+
+  static TextStyle handwritingSmall = GoogleFonts.nanumPenScript(
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: textSecondary,
+    height: 1.0,
+  );
 
   static const TextStyle titleLarge = TextStyle(
     fontFamily: fontFamily,
@@ -126,6 +166,13 @@ class AppTheme {
     color: textPrimary,
   );
 
+  static const TextStyle bodyMedium = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: textPrimary,
+  );
+
   static const TextStyle bodyRegular = TextStyle(
     fontFamily: fontFamily,
     fontSize: 14,
@@ -136,6 +183,13 @@ class AppTheme {
   static const TextStyle bodyLight = TextStyle(
     fontFamily: fontFamily,
     fontSize: 13,
+    fontWeight: FontWeight.w400,
+    color: textSecondary,
+  );
+
+  static const TextStyle bodySmall = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 12,
     fontWeight: FontWeight.w400,
     color: textSecondary,
   );
@@ -152,8 +206,6 @@ class AppTheme {
   static TextStyle get headingMedium => titleMedium;
   static TextStyle get headingSmall => titleSmall;
   static TextStyle get bodyLarge => bodyBold;
-  static TextStyle get bodyMedium => bodyRegular;
-  static TextStyle get bodySmall => bodyLight;
   static TextStyle get caption => labelSmall;
 
   // 간격 및 곡률
@@ -169,7 +221,7 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      scaffoldBackgroundColor: ivoryPaper,
+      scaffoldBackgroundColor: oatSilk, // 기본 배경을 Oat Silk로 고정
       fontFamily: fontFamily,
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
@@ -202,8 +254,12 @@ class AppTheme {
       goalThemes[index % goalThemes.length];
 
   static int getThemeIndex(String theme) {
+    if (theme.isEmpty) return 0;
     try {
-      return int.parse(theme.split('_').last);
+      if (theme.contains('_')) {
+        return int.parse(theme.split('_').last);
+      }
+      return 0;
     } catch (_) {
       return 0;
     }

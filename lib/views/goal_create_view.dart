@@ -20,22 +20,24 @@ class GoalCreateView extends StatefulWidget {
 
 class _GoalCreateViewState extends State<GoalCreateView> {
   final _titleController = TextEditingController();
+  final _timeCapsuleController = TextEditingController();
   int _selectedThemeIndex = 0;
   bool _isSaving = false;
 
   @override
   void dispose() {
     _titleController.dispose();
+    _timeCapsuleController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.ivoryPaper,
+      backgroundColor: AppTheme.oatSilk,
       appBar: AppBar(
         title: Text(
-          '나의 새로운 시작',
+          '나의 새로운 발걸음',
           style: AppTheme.titleSmall.copyWith(fontWeight: FontWeight.w900),
         ),
         backgroundColor: Colors.transparent,
@@ -46,17 +48,6 @@ class _GoalCreateViewState extends State<GoalCreateView> {
             padding: const EdgeInsets.all(AppTheme.spacingL),
             child: Column(
               children: [
-                MaskingTape(
-                  text: 'DREAM MEMO',
-                  rotation: -0.02,
-                  color: AppTheme.maskingTape,
-                  textStyle: AppTheme.bodyBold.copyWith(
-                    color: AppTheme.textPrimary.withOpacity(0.7),
-                    letterSpacing: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
                 HandDrawnContainer(
                   padding: const EdgeInsets.all(AppTheme.spacingL),
                   backgroundColor: Colors.white,
@@ -64,7 +55,7 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '나의 새로운 발걸음은\n무엇인가요?',
+                        '나의 꿈은 무엇인가요?',
                         style: AppTheme.titleSmall.copyWith(
                           fontWeight: FontWeight.w900,
                           height: 1.4,
@@ -84,9 +75,44 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                           fontWeight: FontWeight.w900,
                         ),
                       ),
-                      const SizedBox(height: 48),
+                      const SizedBox(height: 40),
                       Text(
-                        '기록의 분위기',
+                        '미래의 나에게 보낼 응원 한마디',
+                        style: AppTheme.bodyBold.copyWith(
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '* 이 메세지는 꿈을 이룬 날에 공개됩니다.',
+                        style: AppTheme.labelSmall.copyWith(
+                          color: AppTheme.textTertiary,
+                          fontSize: 10,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _timeCapsuleController,
+                        maxLines: 2,
+                        decoration: InputDecoration(
+                          hintText: '꿈을 향한 여정을 시작하며...',
+                          hintStyle: AppTheme.bodyRegular.copyWith(
+                            color: AppTheme.textTertiary.withOpacity(0.4),
+                          ),
+                          filled: true,
+                          fillColor: AppTheme.oatSilk.withOpacity(0.3),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        style: AppTheme.bodyMedium.copyWith(
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                      Text(
+                        '기록의 조각 컬러',
                         style: AppTheme.bodyBold.copyWith(
                           color: AppTheme.textSecondary,
                         ),
@@ -104,8 +130,8 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                             onTap: () =>
                                 setState(() => _selectedThemeIndex = index),
                             child: Container(
-                              width: 50,
-                              height: 50,
+                              width: 44,
+                              height: 44,
                               decoration: BoxDecoration(
                                 color: themeSet.background,
                                 shape: BoxShape.circle,
@@ -120,7 +146,7 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                                   ? Icon(
                                       Icons.check,
                                       color: themeSet.text,
-                                      size: 24,
+                                      size: 20,
                                     )
                                   : null,
                             ),
@@ -135,12 +161,14 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                             backgroundColor: AppTheme.getGoalTheme(
                               _selectedThemeIndex,
                             ).point,
-                            borderColor: AppTheme.getGoalTheme(
-                              _selectedThemeIndex,
-                            ).text.withOpacity(0.2),
+                            borderColor: AppTheme.getSmartBorderColor(
+                              AppTheme.getGoalTheme(_selectedThemeIndex).point,
+                            ),
                             padding: EdgeInsets.zero,
+                            borderRadius: 12,
                             child: Container(
                               height: 56,
+                              width: double.infinity,
                               alignment: Alignment.center,
                               child: _isSaving
                                   ? const SizedBox(
@@ -152,7 +180,7 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                                       ),
                                     )
                                   : Text(
-                                      '기록장 첫 장 시작하기',
+                                      '꿈의 기록장 시작하기',
                                       style: AppTheme.bodyBold.copyWith(
                                         color: Colors.white,
                                         letterSpacing: 2.0,
@@ -175,10 +203,11 @@ class _GoalCreateViewState extends State<GoalCreateView> {
 
   Future<void> _saveGoal() async {
     final title = _titleController.text.trim();
+    final timeCapsule = _timeCapsuleController.text.trim();
     if (title.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('무엇을 수집할지 이름을 알려주세요!'),
+          content: Text('꿈의 이름을 알려주세요!'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -192,6 +221,7 @@ class _GoalCreateViewState extends State<GoalCreateView> {
         'theme_$_selectedThemeIndex',
         widget.frameIndex,
         widget.slotIndex,
+        timeCapsuleMessage: timeCapsule.isNotEmpty ? timeCapsule : null,
       );
       if (mounted) Navigator.pop(context);
     } catch (e) {

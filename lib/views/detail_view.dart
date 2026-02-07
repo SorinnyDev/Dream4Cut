@@ -88,7 +88,7 @@ class _DetailViewState extends State<DetailView>
     final themeSet = AppTheme.getGoalTheme(themeIndex);
 
     return Scaffold(
-      backgroundColor: AppTheme.ivoryPaper,
+      backgroundColor: AppTheme.oatSilk,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -108,6 +108,27 @@ class _DetailViewState extends State<DetailView>
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          // 타임캡슐 아이콘 (봉인된 편지)
+          if (currentGoal.timeCapsuleMessage != null &&
+              currentGoal.status == GoalStatus.active)
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: IconButton(
+                icon: const Icon(
+                  Icons.markunread_mailbox_outlined,
+                  color: AppTheme.textSecondary,
+                ),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('꿈을 이룬 날에 공개됩니다!'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+              ),
+            ),
+
           if (currentGoal.status == GoalStatus.active)
             Padding(
               padding: const EdgeInsets.only(right: 12.0),
@@ -131,12 +152,6 @@ class _DetailViewState extends State<DetailView>
       body: SafeArea(
         child: Stack(
           children: [
-            // 전체 배경 종이 질감 오버레이
-            Positioned.fill(
-              child: IgnorePointer(
-                child: CustomPaint(painter: PaperTexturePainter()),
-              ),
-            ),
             Column(
               children: [
                 Expanded(
@@ -162,10 +177,12 @@ class _DetailViewState extends State<DetailView>
                               horizontal: AppTheme.spacingL,
                             ),
                             child: HandDrawnContainer(
-                              backgroundColor: Colors.white.withOpacity(0.9),
-                              borderColor: themeSet.point.withOpacity(0.6),
+                              backgroundColor: Colors.white,
+                              borderColor: AppTheme.getSmartBorderColor(
+                                themeSet.point,
+                              ),
                               padding: const EdgeInsets.all(AppTheme.spacingM),
-                              showOffsetLayer: true,
+                              showOffsetLayer: false,
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -208,14 +225,15 @@ class _DetailViewState extends State<DetailView>
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 8),
-                                  // Underline effect
+                                  const SizedBox(height: 12),
+                                  // Underline effect (Pencil line)
                                   Container(
-                                    height: 1.5,
+                                    height: 1.2,
                                     width: double.infinity,
                                     decoration: BoxDecoration(
-                                      color: themeSet.point.withOpacity(0.5),
-                                      borderRadius: BorderRadius.circular(1),
+                                      color: AppTheme.getSmartBorderColor(
+                                        themeSet.point,
+                                      ).withOpacity(0.3),
                                     ),
                                   ),
                                 ],
@@ -229,7 +247,9 @@ class _DetailViewState extends State<DetailView>
 
                         // Logs Timeline
                         _buildLogsHistory(currentGoal, themeSet),
-                        const SizedBox(height: 140), // Space for bottom button
+                        const SizedBox(
+                          height: 140,
+                        ), // Space for sticky bottom button
                       ],
                     ),
                   ),
@@ -237,20 +257,21 @@ class _DetailViewState extends State<DetailView>
               ],
             ),
 
-            // Fixed Bottom Button
+            // Sticky Bottom Button
             if (currentGoal.status == GoalStatus.active)
               Positioned(
                 left: 24,
                 right: 24,
-                bottom: 30 + MediaQuery.of(context).padding.bottom,
+                bottom: 20 + MediaQuery.of(context).padding.bottom,
                 child: Bounceable(
                   onTap: _isSaving ? null : _saveLog,
                   child: HandDrawnContainer(
                     backgroundColor: themeSet.point,
-                    borderColor: Colors.black.withOpacity(0.1),
+                    borderColor: AppTheme.getSmartBorderColor(themeSet.point),
                     padding: EdgeInsets.zero,
+                    borderRadius: 16,
                     child: Container(
-                      height: 64,
+                      height: 60,
                       alignment: Alignment.center,
                       child: _isSaving
                           ? const SizedBox(
@@ -266,7 +287,7 @@ class _DetailViewState extends State<DetailView>
                               style: AppTheme.bodyBold.copyWith(
                                 color: Colors.white,
                                 fontSize: 16,
-                                letterSpacing: 1.5,
+                                letterSpacing: 1.2,
                               ),
                             ),
                     ),
@@ -442,7 +463,44 @@ class _CompletionOverlay extends StatelessWidget {
                 color: Colors.white.withOpacity(0.7),
               ),
             ),
-            const SizedBox(height: 60),
+            const SizedBox(height: 48),
+
+            if (goal.timeCapsuleMessage != null) ...[
+              HandDrawnContainer(
+                backgroundColor: AppTheme.oatSilk,
+                borderColor: AppTheme.getSmartBorderColor(themeSet.point),
+                padding: const EdgeInsets.all(AppTheme.spacingL),
+                borderRadius: 4,
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.mail_outline,
+                      color: AppTheme.textSecondary,
+                      size: 32,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      '미래의 나에게서 온 편지',
+                      style: AppTheme.labelSmall.copyWith(
+                        color: AppTheme.textTertiary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      '"${goal.timeCapsuleMessage}"',
+                      style: AppTheme.titleSmall.copyWith(
+                        color: AppTheme.textPrimary,
+                        fontStyle: FontStyle.italic,
+                        height: 1.5,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 40),
+            ],
 
             Container(
               width: 280,

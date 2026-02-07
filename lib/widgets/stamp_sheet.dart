@@ -29,7 +29,6 @@ class _StampSheetState extends State<StampSheet>
 
   static const int gridColumns = 10;
   static const int gridRows = 20;
-  static const int totalCells = gridColumns * gridRows;
 
   @override
   void initState() {
@@ -158,7 +157,9 @@ class _StampSheetState extends State<StampSheet>
         color: Colors.white.withOpacity(0.9),
         borderRadius: BorderRadius.circular(2),
         border: Border.all(
-          color: themeSet.text.withOpacity(isFilled ? 0.6 : 0.15),
+          color: isFilled
+              ? AppTheme.getSmartBorderColor(themeSet.point)
+              : AppTheme.getSmartBorderColor(themeSet.point).withOpacity(0.12),
           width: 1.2, // 테두리 두께 1.2px로 강화
         ),
       ),

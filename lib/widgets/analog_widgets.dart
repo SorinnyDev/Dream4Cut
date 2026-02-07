@@ -65,11 +65,9 @@ class MaskingTape extends StatelessWidget {
                         text,
                         style:
                             textStyle ??
-                            AppTheme.labelSmall.copyWith(
+                            AppTheme.handwritingSmall.copyWith(
                               color: Colors.black.withOpacity(0.7),
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.8,
-                              fontSize: 12,
+                              fontSize: 13,
                             ),
                         maxLines: 1,
                       ),
@@ -158,17 +156,18 @@ class HandDrawnContainer extends StatelessWidget {
     this.borderColor,
     this.backgroundColor = Colors.white,
     this.padding = const EdgeInsets.all(16),
-    this.strokeWidth = 1.0,
-    this.showOffsetLayer = true,
+    this.strokeWidth = 1.2, // 1.2px 실선 고정
+    this.showOffsetLayer = false, // 그림자 제거 대안
     this.showStackEffect = false,
-    this.borderRadius = 2.0,
+    this.borderRadius = 8.0, // 약간 더 둥글게
     this.useTexture = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final effectiveBorderColor =
-        borderColor ?? AppTheme.pencilCharcoal.withOpacity(0.4);
+        borderColor ??
+        AppTheme.getSmartBorderColor(backgroundColor ?? Colors.white);
 
     return Stack(
       clipBehavior: Clip.none,
@@ -176,38 +175,13 @@ class HandDrawnContainer extends StatelessWidget {
         if (showStackEffect) ...[
           // 뒤쪽 겹친 종이 1
           Positioned(
-            left: -2,
-            top: 2,
-            right: 2,
-            bottom: -2,
-            child: _buildBackground(Colors.black.withOpacity(0.03), 1.0),
-          ),
-          // 뒤쪽 겹친 종이 2
-          Positioned(
-            left: 2,
-            top: -2,
-            right: -2,
-            bottom: 2,
-            child: _buildBackground(
-              backgroundColor?.withOpacity(0.5) ??
-                  Colors.white.withOpacity(0.5),
-              -1.0,
-            ),
+            left: -3,
+            top: 3,
+            right: 3,
+            bottom: -3,
+            child: _buildBackground(Colors.black.withOpacity(0.04), 0.8),
           ),
         ],
-        if (showOffsetLayer)
-          Positioned(
-            left: 3,
-            top: 3,
-            right: -3,
-            bottom: -3,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.04),
-                borderRadius: BorderRadius.circular(borderRadius),
-              ),
-            ),
-          ),
         Container(
           decoration: BoxDecoration(
             color: backgroundColor,
@@ -224,7 +198,6 @@ class HandDrawnContainer extends StatelessWidget {
                   color: effectiveBorderColor,
                   strokeWidth: strokeWidth,
                   borderRadius: borderRadius,
-                  useTexture: false,
                 ),
                 child: Padding(padding: padding, child: child),
               ),
@@ -242,7 +215,7 @@ class HandDrawnContainer extends StatelessWidget {
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(borderRadius),
-          border: Border.all(color: AppTheme.pencilCharcoal.withOpacity(0.05)),
+          border: Border.all(color: AppTheme.pencilCharcoal.withOpacity(0.08)),
         ),
       ),
     );
@@ -256,27 +229,30 @@ class PaperTexturePainter extends CustomPainter {
     final random = math.Random(10);
     final paint = Paint();
 
-    for (int i = 0; i < 200; i++) {
-      paint.color = Colors.black.withOpacity(random.nextDouble() * 0.015);
+    // 밝은 점들 (Paper fiber 느낌)
+    for (int i = 0; i < 300; i++) {
+      paint.color = Colors.black.withOpacity(random.nextDouble() * 0.008);
       canvas.drawCircle(
         Offset(
           random.nextDouble() * size.width,
           random.nextDouble() * size.height,
         ),
-        random.nextDouble() * 0.6,
+        random.nextDouble() * 0.5,
         paint,
       );
     }
 
+    // 빈티지 얼룩 (Mottled effect)
     final spotPaint = Paint()..style = PaintingStyle.fill;
-    for (int i = 0; i < 4; i++) {
-      spotPaint.color = const Color(0xFFD2B48C).withOpacity(0.02);
+    for (int i = 0; i < 6; i++) {
+      // 인화지/종이 특유의 미세한 변색
+      spotPaint.color = const Color(0xFFD2B48C).withOpacity(0.012);
       canvas.drawCircle(
         Offset(
           random.nextDouble() * size.width,
           random.nextDouble() * size.height,
         ),
-        random.nextDouble() * 30 + 10,
+        random.nextDouble() * 50 + 20,
         spotPaint,
       );
     }
@@ -290,13 +266,11 @@ class HandDrawnPainter extends CustomPainter {
   final Color color;
   final double strokeWidth;
   final double borderRadius;
-  final bool useTexture;
 
   HandDrawnPainter({
     required this.color,
     required this.strokeWidth,
     required this.borderRadius,
-    this.useTexture = true,
   });
 
   @override
@@ -305,33 +279,97 @@ class HandDrawnPainter extends CustomPainter {
       ..color = color
       ..strokeWidth = strokeWidth
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
     final random = math.Random(456);
 
+    // 약간의 떨림을 주기 위해 직선별로 그림
     void drawSkewedLine(Offset start, Offset end) {
       final path = Path();
       path.moveTo(start.dx, start.dy);
 
-      int segments = 8;
+      int segments = 10;
       for (int i = 1; i <= segments; i++) {
         double t = i / segments;
         double x = start.dx + (end.dx - start.dx) * t;
         double y = start.dy + (end.dy - start.dy) * t;
 
-        x += (random.nextDouble() - 0.5) * 0.6;
-        y += (random.nextDouble() - 0.5) * 0.6;
+        // 아주 미세한 떨림 (다이어리 손그림 감성)
+        x += (random.nextDouble() - 0.5) * 0.4;
+        y += (random.nextDouble() - 0.5) * 0.4;
 
         path.lineTo(x, y);
       }
       canvas.drawPath(path, paint);
     }
 
-    // 외곽선
-    drawSkewedLine(Offset.zero, Offset(size.width, 0));
-    drawSkewedLine(Offset(size.width, 0), Offset(size.width, size.height));
-    drawSkewedLine(Offset(size.width, size.height), Offset(0, size.height));
-    drawSkewedLine(Offset(0, size.height), Offset.zero);
+    // 테두리 실선 그리기 (RRect를 따르되 약간의 수작업 느낌)
+    // 상단
+    drawSkewedLine(
+      Offset(borderRadius, 0),
+      Offset(size.width - borderRadius, 0),
+    );
+    // 우측
+    drawSkewedLine(
+      Offset(size.width, borderRadius),
+      Offset(size.width, size.height - borderRadius),
+    );
+    // 하단
+    drawSkewedLine(
+      Offset(size.width - borderRadius, size.height),
+      Offset(borderRadius, size.height),
+    );
+    // 좌측
+    drawSkewedLine(
+      Offset(0, size.height - borderRadius),
+      Offset(0, borderRadius),
+    );
+
+    // 코너 아치 (간단하게 그려주거나 생략 가능하지만, 완성도를 위해 drawArc)
+    canvas.drawArc(
+      Rect.fromLTWH(0, 0, borderRadius * 2, borderRadius * 2),
+      math.pi,
+      math.pi / 2,
+      false,
+      paint,
+    );
+    canvas.drawArc(
+      Rect.fromLTWH(
+        size.width - borderRadius * 2,
+        0,
+        borderRadius * 2,
+        borderRadius * 2,
+      ),
+      -math.pi / 2,
+      math.pi / 2,
+      false,
+      paint,
+    );
+    canvas.drawArc(
+      Rect.fromLTWH(
+        size.width - borderRadius * 2,
+        size.height - borderRadius * 2,
+        borderRadius * 2,
+        borderRadius * 2,
+      ),
+      0,
+      math.pi / 2,
+      false,
+      paint,
+    );
+    canvas.drawArc(
+      Rect.fromLTWH(
+        0,
+        size.height - borderRadius * 2,
+        borderRadius * 2,
+        borderRadius * 2,
+      ),
+      math.pi / 2,
+      math.pi / 2,
+      false,
+      paint,
+    );
   }
 
   @override

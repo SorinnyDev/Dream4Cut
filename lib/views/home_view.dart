@@ -53,8 +53,9 @@ class _HomeViewState extends State<HomeView> {
                       children: [
                         Text(
                           '나의 꿈 기록장',
-                          style: AppTheme.titleMedium.copyWith(
-                            letterSpacing: -0.5,
+                          style: AppTheme.handwritingLarge.copyWith(
+                            color: AppTheme.textPrimary,
+                            fontSize: 26,
                           ),
                         ),
                         IconButton(
@@ -219,42 +220,64 @@ class _GoalFrameItem extends StatelessWidget {
           context.read<GoalProvider>().setTabIndex(1);
         }
       },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-        child: HandDrawnContainer(
-          showStackEffect: true,
-          backgroundColor: themeSet.background,
-          borderColor: themeSet.text.withOpacity(0.2),
-          padding: EdgeInsets.zero,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(AppTheme.spacingL),
-                child: Center(
-                  child: Text(
-                    goal!.title,
-                    style: AppTheme.titleSmall.copyWith(
-                      color: themeSet.text,
-                      fontWeight: FontWeight.w900,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-              Positioned(
-                left: tapePosition,
-                top: -8,
-                child: MaskingTape(
-                  rotation: tapeRotation,
-                  color: themeSet.point,
-                  opacity: 0.6,
-                ),
-              ),
-            ],
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 16.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(
+            color: AppTheme.pencilDash.withOpacity(0.3),
+            width: 1.2,
           ),
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: themeSet.background,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        Icons.collections_outlined,
+                        color: themeSet.text.withOpacity(0.1),
+                        size: 40,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: tapePosition,
+                    top: 2,
+                    child: MaskingTape(
+                      rotation: tapeRotation,
+                      color: themeSet.point,
+                      opacity: 0.7,
+                      height: 24,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // 인화지 하단 흰 여백 및 제목
+            Container(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: Text(
+                goal!.title,
+                style: AppTheme.bodyBold.copyWith(
+                  color: AppTheme.textPrimary,
+                  fontSize: 13,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
       ),
     );
