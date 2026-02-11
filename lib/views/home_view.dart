@@ -254,12 +254,26 @@ class _GoalFrameItem extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.auto_awesome_rounded,
-                    color: AppTheme.textTertiary.withOpacity(0.3),
-                    size: 28,
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppTheme.pencilDash.withOpacity(0.3),
+                        width: 2,
+                        strokeAlign: BorderSide.strokeAlignInside,
+                      ),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        Icons.add_rounded,
+                        color: AppTheme.textTertiary.withOpacity(0.3),
+                        size: 32,
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
                   Text(
                     '새로운 조각을 기다려요',
                     style: AppTheme.labelSmall.copyWith(
@@ -339,7 +353,31 @@ class _GoalFrameItem extends StatelessWidget {
                               color: themeSet.background,
                               borderRadius: BorderRadius.circular(2),
                             ),
-                            child: const Center(),
+                            child: Center(
+                              child: Transform.rotate(
+                                angle:
+                                    (cardRandom.nextDouble() - 0.5) *
+                                    0.08, // 이모지 미세 회전
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.15),
+                                        offset: const Offset(0, 4),
+                                        blurRadius: 8,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    goal!.emojiTag,
+                                    style: const TextStyle(
+                                      fontSize: 72,
+                                      height: 1.0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                           Positioned(
                             left: tapeLeft,

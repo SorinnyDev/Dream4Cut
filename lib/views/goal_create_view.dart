@@ -22,7 +22,60 @@ class _GoalCreateViewState extends State<GoalCreateView> {
   final _titleController = TextEditingController();
   final _timeCapsuleController = TextEditingController();
   int _selectedThemeIndex = 0;
+  String _selectedEmoji = '🌟'; // 기본 이모지
   bool _isSaving = false;
+
+  // 사용 가능한 이모지 목록
+  static const List<String> _availableEmojis = [
+    '🌟',
+    '✨',
+    '💫',
+    '🌈',
+    '🌺',
+    '🌸',
+    '🌼',
+    '🌻',
+    '🌹',
+    '🌷',
+    '🌵',
+    '🌱',
+    '🍀',
+    '🌿',
+    '☘️',
+    '🍁',
+    '🍂',
+    '🍃',
+    '🍄',
+    '🌾',
+    '🐞',
+    '🦋',
+    '🦟',
+    '🐝',
+    '🐚',
+    '🐛',
+    '🐙',
+    '🐌',
+    '🌏',
+    '🌎',
+    '🌍',
+    '🌐',
+    '💪',
+    '👏',
+    '✌️',
+    '✊',
+    '🤝',
+    '👍',
+    '❤️',
+    '💖',
+    '💛',
+    '💚',
+    '💙',
+    '💜',
+    '🧡',
+    '💓',
+    '💗',
+    '💕',
+  ];
 
   @override
   void dispose() {
@@ -108,6 +161,71 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                         ),
                         style: AppTheme.bodyMedium.copyWith(
                           color: AppTheme.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                      Text(
+                        '이 꿈의 조각을 대표하는 스티커',
+                        style: AppTheme.bodyBold.copyWith(
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 70,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _availableEmojis.length,
+                          itemBuilder: (context, index) {
+                            final emoji = _availableEmojis[index];
+                            final isSelected = _selectedEmoji == emoji;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: Bounceable(
+                                onTap: () =>
+                                    setState(() => _selectedEmoji = emoji),
+                                child: Container(
+                                  width: 70,
+                                  height: 70,
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? AppTheme.getGoalTheme(
+                                            _selectedThemeIndex,
+                                          ).background
+                                        : AppTheme.ivoryPaper.withOpacity(0.5),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? AppTheme.getGoalTheme(
+                                              _selectedThemeIndex,
+                                            ).point
+                                          : AppTheme.pencilDash.withOpacity(
+                                              0.3,
+                                            ),
+                                      width: isSelected ? 2.5 : 1.0,
+                                    ),
+                                    boxShadow: isSelected
+                                        ? [
+                                            BoxShadow(
+                                              color: AppTheme.getGoalTheme(
+                                                _selectedThemeIndex,
+                                              ).point.withOpacity(0.2),
+                                              offset: const Offset(0, 4),
+                                              blurRadius: 8,
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      emoji,
+                                      style: const TextStyle(fontSize: 36),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
                       const SizedBox(height: 40),
@@ -223,6 +341,7 @@ class _GoalCreateViewState extends State<GoalCreateView> {
         widget.frameIndex,
         widget.slotIndex,
         timeCapsuleMessage: timeCapsule.isNotEmpty ? timeCapsule : null,
+        emojiTag: _selectedEmoji,
       );
       if (mounted) Navigator.pop(context);
     } catch (e) {

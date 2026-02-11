@@ -15,6 +15,7 @@ class Goal {
   final int slotIndex; // 0, 1, 2, 3 (1x4 프레임 내 위치)
   final DateTime? completedAt;
   final String? timeCapsuleMessage; // 미래의 나에게 보내는 응원 메세지
+  final String emojiTag; // 이모지 스티커
 
   Goal({
     required this.id,
@@ -28,7 +29,8 @@ class Goal {
     this.slotIndex = 0,
     this.completedAt,
     this.timeCapsuleMessage,
-  });
+    String? emojiTag,
+  }) : emojiTag = emojiTag ?? _getRandomEmoji();
 
   /// 현재 인화지 번호 (1-based)
   int get currentSheetNumber => (totalCount ~/ 200) + 1;
@@ -42,6 +44,61 @@ class Goal {
   /// 현재 인화지의 진행률 퍼센트 (0.0 ~ 1.0)
   double get currentSheetProgressPercent => currentSheetProgress / 200.0;
 
+  /// 랜덤 이모지 선택
+  static String _getRandomEmoji() {
+    const emojis = [
+      '🌟',
+      '✨',
+      '💫',
+      '🌈',
+      '🌺',
+      '🌸',
+      '🌼',
+      '🌻',
+      '🌹',
+      '🌷',
+      '🌵',
+      '🌱',
+      '🍀',
+      '🌿',
+      '☘️',
+      '🍁',
+      '🍂',
+      '🍃',
+      '🍄',
+      '🌾',
+      '🐞',
+      '🦋',
+      '🦟',
+      '🐝',
+      '🐚',
+      '🐛',
+      '🐙',
+      '🐌',
+      '🌏',
+      '🌎',
+      '🌍',
+      '🌐',
+      '💪',
+      '👏',
+      '✌️',
+      '✊',
+      '🤝',
+      '👍',
+      '❤️',
+      '💖',
+      '💛',
+      '💚',
+      '💙',
+      '💜',
+      '🧡',
+      '💓',
+      '💗',
+      '💕',
+    ];
+    return emojis[(DateTime.now().millisecondsSinceEpoch % emojis.length)];
+  }
+
   Goal copyWith({
     String? id,
     String? title,
@@ -54,6 +111,7 @@ class Goal {
     int? slotIndex,
     DateTime? completedAt,
     String? timeCapsuleMessage,
+    String? emojiTag,
   }) {
     return Goal(
       id: id ?? this.id,
@@ -67,6 +125,7 @@ class Goal {
       slotIndex: slotIndex ?? this.slotIndex,
       completedAt: completedAt ?? this.completedAt,
       timeCapsuleMessage: timeCapsuleMessage ?? this.timeCapsuleMessage,
+      emojiTag: emojiTag ?? this.emojiTag,
     );
   }
 
@@ -83,6 +142,7 @@ class Goal {
       'slotIndex': slotIndex,
       'completedAt': completedAt?.toIso8601String(),
       'timeCapsuleMessage': timeCapsuleMessage,
+      'emojiTag': emojiTag,
     };
   }
 
@@ -104,6 +164,7 @@ class Goal {
           ? DateTime.parse(json['completedAt'] as String)
           : null,
       timeCapsuleMessage: json['timeCapsuleMessage'] as String?,
+      emojiTag: json['emojiTag'] as String?,
     );
   }
 

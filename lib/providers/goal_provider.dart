@@ -59,6 +59,7 @@ class GoalProvider with ChangeNotifier {
     int frameIndex,
     int slotIndex, {
     String? timeCapsuleMessage,
+    String? emojiTag,
   }) async {
     final newGoal = Goal(
       id: const Uuid().v4(),
@@ -71,6 +72,7 @@ class GoalProvider with ChangeNotifier {
       frameIndex: frameIndex,
       slotIndex: slotIndex,
       timeCapsuleMessage: timeCapsuleMessage,
+      emojiTag: emojiTag,
     );
     await _repository.insertGoal(newGoal);
     await loadGoals();
@@ -114,6 +116,11 @@ class GoalProvider with ChangeNotifier {
       await _repository.updateGoal(updatedGoal);
       await loadGoals();
     }
+  }
+
+  Future<void> updateGoal(Goal goal) async {
+    await _repository.updateGoal(goal);
+    await loadGoals();
   }
 
   Future<void> archiveGoal(String id) async {

@@ -22,7 +22,7 @@ class DatabaseService {
     String path = join(await getDatabasesPath(), 'dream4cut.db');
     return await openDatabase(
       path,
-      version: 3,
+      version: 4, // emojiTag 필드 추가
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -36,6 +36,10 @@ class DatabaseService {
     } else if (oldVersion < 3) {
       // Version 3: timeCapsuleMessage 필드 추가
       await db.execute('ALTER TABLE goals ADD COLUMN timeCapsuleMessage TEXT');
+    }
+    if (oldVersion < 4) {
+      // Version 4: emojiTag 필드 추가
+      await db.execute('ALTER TABLE goals ADD COLUMN emojiTag TEXT');
     }
   }
 
@@ -52,7 +56,8 @@ class DatabaseService {
         frameIndex INTEGER,
         slotIndex INTEGER,
         completedAt TEXT,
-        timeCapsuleMessage TEXT
+        timeCapsuleMessage TEXT,
+        emojiTag TEXT
       )
     ''');
 

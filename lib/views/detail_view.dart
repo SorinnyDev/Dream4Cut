@@ -76,6 +76,292 @@ class _DetailViewState extends State<DetailView>
     }
   }
 
+  void _showEditGoalDialog(
+    BuildContext context,
+    Goal goal,
+    GoalThemeSet themeSet,
+  ) {
+    final titleController = TextEditingController(text: goal.title);
+    int selectedThemeIndex = AppTheme.getThemeIndex(goal.backgroundTheme);
+    String selectedEmoji = goal.emojiTag;
+
+    // 사용 가능한 이모지 목록
+    const availableEmojis = [
+      '🌟',
+      '✨',
+      '💫',
+      '🌈',
+      '🌺',
+      '🌸',
+      '🌼',
+      '🌻',
+      '🌹',
+      '🌷',
+      '🌵',
+      '🌱',
+      '🍀',
+      '🌿',
+      '☘️',
+      '🍁',
+      '🍂',
+      '🍃',
+      '🍄',
+      '🌾',
+      '🐞',
+      '🦋',
+      '🦟',
+      '🐝',
+      '🐚',
+      '🐛',
+      '🐙',
+      '🐌',
+      '🌏',
+      '🌎',
+      '🌍',
+      '🌐',
+      '💪',
+      '👏',
+      '✌️',
+      '✊',
+      '🤝',
+      '👍',
+      '❤️',
+      '💖',
+      '💛',
+      '💚',
+      '💙',
+      '💜',
+      '🧡',
+      '💓',
+      '💗',
+      '💕',
+    ];
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            decoration: BoxDecoration(
+              color: AppTheme.creamWhite,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  offset: const Offset(0, 10),
+                  blurRadius: 30,
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '꿈 수정하기',
+                    style: AppTheme.titleSmall.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: themeSet.text,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 제목 입력
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      labelText: '꿈의 이름',
+                      labelStyle: AppTheme.bodyRegular.copyWith(
+                        color: AppTheme.textSecondary,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: themeSet.point, width: 2),
+                      ),
+                    ),
+                    style: AppTheme.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 이모지 선택
+                  Text(
+                    '스티커',
+                    style: AppTheme.bodyBold.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 70,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: availableEmojis.length,
+                      itemBuilder: (context, index) {
+                        final emoji = availableEmojis[index];
+                        final isSelected = selectedEmoji == emoji;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: Bounceable(
+                            onTap: () =>
+                                setDialogState(() => selectedEmoji = emoji),
+                            child: Container(
+                              width: 70,
+                              height: 70,
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppTheme.getGoalTheme(
+                                        selectedThemeIndex,
+                                      ).background
+                                    : AppTheme.ivoryPaper.withOpacity(0.5),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppTheme.getGoalTheme(
+                                          selectedThemeIndex,
+                                        ).point
+                                      : AppTheme.pencilDash.withOpacity(0.3),
+                                  width: isSelected ? 2.5 : 1.0,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  emoji,
+                                  style: const TextStyle(fontSize: 36),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 테마 색상 선택
+                  Text(
+                    '테마 컬러',
+                    style: AppTheme.bodyBold.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: List.generate(AppTheme.goalThemes.length, (
+                      index,
+                    ) {
+                      final isSelected = selectedThemeIndex == index;
+                      final theme = AppTheme.getGoalTheme(index);
+                      return Bounceable(
+                        onTap: () =>
+                            setDialogState(() => selectedThemeIndex = index),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: theme.background,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSelected
+                                  ? theme.text
+                                  : theme.text.withOpacity(0.1),
+                              width: isSelected ? 2.5 : 1.2,
+                            ),
+                          ),
+                          child: isSelected
+                              ? Icon(Icons.check, color: theme.text, size: 20)
+                              : null,
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // 버튼
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: Text(
+                            '취소',
+                            style: AppTheme.bodyBold.copyWith(
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            final newTitle = titleController.text.trim();
+                            if (newTitle.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('제목을 입력해주세요')),
+                              );
+                              return;
+                            }
+
+                            final updatedGoal = goal.copyWith(
+                              title: newTitle,
+                              backgroundTheme: 'theme_$selectedThemeIndex',
+                              emojiTag: selectedEmoji,
+                              updatedAt: DateTime.now(),
+                            );
+
+                            await context.read<GoalProvider>().updateGoal(
+                              updatedGoal,
+                            );
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('수정되었습니다'),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: themeSet.point,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            '저장',
+                            style: AppTheme.bodyBold.copyWith(
+                              color: AppTheme.creamWhite,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final allGoals = context.watch<GoalProvider>().goals;
@@ -108,6 +394,18 @@ class _DetailViewState extends State<DetailView>
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          // 수정 버튼
+          if (currentGoal.status == GoalStatus.active)
+            IconButton(
+              icon: Icon(
+                Icons.edit_outlined,
+                color: themeSet.text.withOpacity(0.7),
+                size: 22,
+              ),
+              onPressed: () =>
+                  _showEditGoalDialog(context, currentGoal, themeSet),
+            ),
+
           // 타임캡슐 아이콘 (봉인된 편지)
           if (currentGoal.timeCapsuleMessage != null &&
               currentGoal.status == GoalStatus.active)
@@ -258,37 +556,75 @@ class _DetailViewState extends State<DetailView>
                   SafeArea(
                     top: false,
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 5),
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                       child: Bounceable(
                         onTap: _isSaving ? null : _saveLog,
-                        child: HandDrawnContainer(
-                          backgroundColor: const Color(0xFF8B7355), // 따뜻한 브라운 톤
-                          borderColor: AppTheme.getSmartBorderColor(
-                            const Color(0xFF8B7355),
+                        child: Container(
+                          height: 64,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                themeSet.point,
+                                themeSet.point.withOpacity(0.85),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: themeSet.point.withOpacity(0.3),
+                                offset: const Offset(0, 8),
+                                blurRadius: 20,
+                                spreadRadius: -4,
+                              ),
+                              BoxShadow(
+                                color: themeSet.point.withOpacity(0.2),
+                                offset: const Offset(0, 4),
+                                blurRadius: 8,
+                              ),
+                            ],
                           ),
-                          padding: EdgeInsets.zero,
-                          borderRadius: 16,
-                          useMultiply: true,
-                          child: Container(
-                            height: 60,
-                            alignment: Alignment.center,
-                            child: _isSaving
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      color: AppTheme.creamWhite,
-                                      strokeWidth: 3,
-                                    ),
-                                  )
-                                : Text(
-                                    '오늘의 발걸음 남기기',
-                                    style: AppTheme.bodyBold.copyWith(
-                                      color: AppTheme.creamWhite,
-                                      fontSize: 16,
-                                      letterSpacing: 1.2,
-                                    ),
-                                  ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(20),
+                              onTap: _isSaving ? null : _saveLog,
+                              child: Container(
+                                alignment: Alignment.center,
+                                child: _isSaving
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          color: AppTheme.creamWhite,
+                                          strokeWidth: 3,
+                                        ),
+                                      )
+                                    : Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.auto_awesome_rounded,
+                                            color: AppTheme.creamWhite,
+                                            size: 22,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            '오늘의 발걸음 남기기',
+                                            style: AppTheme.handwritingMedium
+                                                .copyWith(
+                                                  color: AppTheme.creamWhite,
+                                                  fontSize: 17,
+                                                  fontWeight: FontWeight.w700,
+                                                  letterSpacing: 0.5,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
