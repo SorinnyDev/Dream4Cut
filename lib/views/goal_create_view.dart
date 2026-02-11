@@ -166,6 +166,7 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                             ),
                             padding: EdgeInsets.zero,
                             borderRadius: 12,
+                            useMultiply: true,
                             child: Container(
                               height: 56,
                               width: double.infinity,
@@ -175,14 +176,14 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                                       width: 20,
                                       height: 20,
                                       child: CircularProgressIndicator(
-                                        color: Colors.white,
+                                        color: AppTheme.creamWhite,
                                         strokeWidth: 2,
                                       ),
                                     )
                                   : Text(
                                       '꿈의 기록장 시작하기',
                                       style: AppTheme.bodyBold.copyWith(
-                                        color: Colors.white,
+                                        color: AppTheme.creamWhite,
                                         letterSpacing: 2.0,
                                       ),
                                     ),

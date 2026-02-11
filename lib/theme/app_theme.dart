@@ -4,17 +4,22 @@ import 'package:google_fonts/google_fonts.dart';
 /// Dream4Cut 앱 테마 - [Scrapbook & Retro Diary] 컨셉
 class AppTheme {
   // ============ 메인 배경: 종이 질감 (Paper Base) ============
+  static const Color premiumCream = Color(0xFFFFFBF0); // 프리미엄 크림색 배경
+  static const Color vignetteEdge = Color(0xFFE8DCC4); // 비네팅 가장자리 색상
   static const Color ivoryPaper = Color(0xFFF9F7F2); // 기본 종이색 (Eggshell)
   static const Color oatSilk = Color(0xFFF3E7D9); // 약간 더 차분한 종이색
   static const Color champagneGold = Color(0xFFFFF9E3); // 성공 앨범 배경
   static const Color archiveBeige = Color(0xFFE5E2D9); // 기록 보관소 배경
 
   // ============ 텍스트 및 선: 딥 차콜 (Pencil/Ink) ============
+  static const Color warmBrown = Color(0xFF3E2723); // 따뜻한 브라운 (모든 텍스트 기본)
   static const Color textPrimary = Color(0xFF2C2C2C);
   static const Color textSecondary = Color(0xFF4A4A4A);
   static const Color textTertiary = Color(0xFF888888);
   static const Color pencilCharcoal = Color(0xFF333333);
   static const Color pencilDash = Color(0xFFDDDDDD);
+  static const Color creamWhite = Color(0xFFFFF9F0); // 눈의 피로를 덜어주는 연한 크림색
+  static const Color deepBrownBorder = Color(0xFF5D4037); // 마스킹 테이프 테두리
 
   /// 지능형 테두리 시스템: 포인트 컬러에 맞는 최적의 테두리색 반환
   static Color getSmartBorderColor(Color pointColor) {
@@ -22,45 +27,42 @@ class AppTheme {
     final hue = hsv.hue;
     final saturation = hsv.saturation;
 
-    // Muted Color (Saturation < 0.25)
     if (saturation < 0.25) {
-      return const Color(0xFF5D4037); // 중립적인 월넛 브라운
+      return const Color(0xFF5D4037);
     }
 
-    // Warm Color (Orange, Yellow, Red, Pink)
     if (hue < 70 || hue > 320) {
-      return const Color(0xFF3E2723); // 붉은 기가 도는 딥 브라운
+      return const Color(0xFF3E2723);
     }
 
-    // Cold Color (Blue, Green, Teal)
-    return const Color(0xFF263238); // 푸른 기가 도는 다크 차콜
+    return const Color(0xFF263238);
   }
 
-  // ============ 테마 세트 재구성 (포인트 컬러 중심) ============
+  // ============ 테마 세트 재구성 (Muted Retro Palette) ============
   static const List<GoalThemeSet> goalThemes = [
+    GoalThemeSet(
+      name: '번트 오렌지',
+      background: Color(0xFFFEF6F3),
+      point: Color(0xFFB35C44),
+      text: Color(0xFF4A2A2A),
+    ),
+    GoalThemeSet(
+      name: '더스티 블루',
+      background: Color(0xFFF1F5F7),
+      point: Color(0xFF5A7684),
+      text: Color(0xFF1D2933),
+    ),
+    GoalThemeSet(
+      name: '세이지 그린',
+      background: Color(0xFFF4F7F0),
+      point: Color(0xFF7D8461),
+      text: Color(0xFF2D331D),
+    ),
     GoalThemeSet(
       name: '빈티지 로즈',
       background: Color(0xFFFDF1F2),
       point: Color(0xFFD48181),
       text: Color(0xFF4A2A2A),
-    ),
-    GoalThemeSet(
-      name: '올리브 가든',
-      background: Color(0xFFF4F7F0),
-      point: Color(0xFF8A9A5B),
-      text: Color(0xFF2D331D),
-    ),
-    GoalThemeSet(
-      name: '썬셋 오렌지',
-      background: Color(0xFFFEF6ED),
-      point: Color(0xFFE08E45),
-      text: Color(0xFF4A2D14),
-    ),
-    GoalThemeSet(
-      name: '미드나잇 블루',
-      background: Color(0xFFF0F4F8),
-      point: Color(0xFF5A7D9A),
-      text: Color(0xFF1D2933),
     ),
     GoalThemeSet(
       name: '코코아 밀크',
@@ -88,7 +90,27 @@ class AppTheme {
     ),
   ];
 
-  static const Color maskingTape = Color(0xFFFFD6A5);
+  static const Color maskingTape = Color(0xFFB35C44); // 번트 오렌지 계열로 변경
+
+  /// 배경 비네팅(Vignette) 효과 데코레이션 - 프리미엄 버전
+  static BoxDecoration getVignetteDecoration() {
+    return BoxDecoration(
+      gradient: RadialGradient(
+        center: Alignment.center,
+        radius: 1.3,
+        colors: [
+          premiumCream.withOpacity(0.0), // 중앙은 투명
+          vignetteEdge.withOpacity(0.4), // 가장자리는 크림 브라운
+        ],
+        stops: const [0.5, 1.0],
+      ),
+    );
+  }
+
+  /// 노이즈 텍스처 데코레이션 (Multiply 모드)
+  static BoxDecoration getNoiseTextureDecoration() {
+    return const BoxDecoration(color: Colors.transparent);
+  }
 
   // ============ 스크랩북 디테일 (Offset Layers & Sketchy Lines) ============
   // 모든 위젯에서 포인트 색상 그림자를 제거하고 실선으로 대체하기 위해 기존 그림자 투명도 조절

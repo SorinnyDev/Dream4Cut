@@ -45,10 +45,15 @@ class _MainScaffoldState extends State<MainScaffold> {
       backgroundColor: backgroundColor,
       body: Stack(
         children: [
-          // 배경 텍스처 오버레이
+          // 배경 텍스처 및 비네팅
           Positioned.fill(
             child: IgnorePointer(
-              child: CustomPaint(painter: PaperTexturePainter()),
+              child: Stack(
+                children: [
+                  CustomPaint(painter: NoiseTexturePainter(opacity: 0.03)),
+                  Container(decoration: AppTheme.getVignetteDecoration()),
+                ],
+              ),
             ),
           ),
           Padding(
@@ -72,26 +77,35 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   Widget _buildCustomBottomBar(GoalProvider provider) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final barWidth = screenWidth * 0.85; // 85% 너비
+
     return Container(
       height: 90,
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 20), // 하단 20px 떨어짐
+      alignment: Alignment.bottomCenter,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
         children: [
           Container(
-            margin: const EdgeInsets.symmetric(
-              horizontal: AppTheme.spacingM,
-              vertical: 4,
-            ),
+            width: barWidth,
             height: 65,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.95),
-              borderRadius: const BorderRadius.all(Radius.circular(20)),
-              border: Border.all(
-                color: AppTheme.pencilDash.withOpacity(0.3),
-                width: 1.2,
-              ),
+              color: Colors.white.withOpacity(0.9), // 글라스모피즘
+              borderRadius: BorderRadius.circular(30), // 캐슐 모양
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  offset: const Offset(0, 4),
+                  blurRadius: 12,
+                ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  offset: const Offset(0, 8),
+                  blurRadius: 24,
+                ),
+              ],
             ),
           ),
 

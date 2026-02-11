@@ -47,20 +47,39 @@ class MaskingTape extends StatelessWidget {
   }
 
   Widget _buildBody(Color tapeColor) {
-    return Container(
+    return SizedBox(
       width: width,
       height: height,
       child: Stack(
         children: [
-          ClipPath(
-            clipper: JaggedTapeClipper(),
-            child: Container(
-              color: tapeColor,
-              alignment: Alignment.center,
+          // Multiply 블렌딩 모드를 적용한 배경
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _MultiplyTapePainter(
+                color: tapeColor,
+                clipper: JaggedTapeClipper(),
+              ),
+            ),
+          ),
+
+          // 테두리 (1.0px 딥 브라운)
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _TapeBorderPainter(
+                borderColor: AppTheme.deepBrownBorder.withOpacity(0.2),
+                clipper: JaggedTapeClipper(),
+              ),
+            ),
+          ),
+
+          // 텍스트 영역
+          Align(
+            alignment: Alignment.center,
+            child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: text.isNotEmpty
                   ? Transform.rotate(
-                      angle: 0.026, // 약 1.5도 기울기 - 손글씨 감성 추가
+                      angle: 0.026,
                       child: Text(
                         text,
                         style:
@@ -75,6 +94,7 @@ class MaskingTape extends StatelessWidget {
                   : const SizedBox(width: 30),
             ),
           ),
+
           // 미세한 종이 질감(Noise) 오버레이
           IgnorePointer(
             child: ClipPath(
@@ -86,6 +106,49 @@ class MaskingTape extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Multiply 블렌딩을 적용한 테이프 배경 페인터
+class _MultiplyTapePainter extends CustomPainter {
+  final Color color;
+  final CustomClipper<Path> clipper;
+
+  _MultiplyTapePainter({required this.color, required this.clipper});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..blendMode = BlendMode.multiply;
+
+    final path = clipper.getClip(size);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+/// 테이프 테두리 페인터
+class _TapeBorderPainter extends CustomPainter {
+  final Color borderColor;
+  final CustomClipper<Path> clipper;
+
+  _TapeBorderPainter({required this.borderColor, required this.clipper});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = borderColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    final path = clipper.getClip(size);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
 
 /// 질감/노이즈를 그려주는 페인터
@@ -101,6 +164,32 @@ class TexturePainter extends CustomPainter {
       double x = random.nextDouble() * size.width;
       double y = random.nextDouble() * size.height;
       canvas.drawCircle(Offset(x, y), 0.3, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+/// 프리미엄 노이즈 텍스처 페인터 (Multiply 블렌딩)
+class NoiseTexturePainter extends CustomPainter {
+  final double opacity;
+
+  NoiseTexturePainter({this.opacity = 0.03});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final random = math.Random(12345);
+    final paint = Paint()
+      ..color = Colors.black.withOpacity(opacity)
+      ..blendMode = BlendMode.multiply;
+
+    // 더 조밀한 노이즈 그레인
+    for (int i = 0; i < 300; i++) {
+      double x = random.nextDouble() * size.width;
+      double y = random.nextDouble() * size.height;
+      double dotSize = random.nextDouble() * 0.8 + 0.2;
+      canvas.drawCircle(Offset(x, y), dotSize, paint);
     }
   }
 
@@ -149,6 +238,7 @@ class HandDrawnContainer extends StatelessWidget {
   final bool showStackEffect;
   final double borderRadius;
   final bool useTexture;
+  final bool useMultiply;
 
   const HandDrawnContainer({
     super.key,
@@ -156,11 +246,12 @@ class HandDrawnContainer extends StatelessWidget {
     this.borderColor,
     this.backgroundColor = Colors.white,
     this.padding = const EdgeInsets.all(16),
-    this.strokeWidth = 1.2, // 1.2px 실선 고정
-    this.showOffsetLayer = false, // 그림자 제거 대안
+    this.strokeWidth = 1.2,
+    this.showOffsetLayer = false,
     this.showStackEffect = false,
-    this.borderRadius = 8.0, // 약간 더 둥글게
+    this.borderRadius = 8.0,
     this.useTexture = true,
+    this.useMultiply = false,
   });
 
   @override
@@ -173,7 +264,6 @@ class HandDrawnContainer extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         if (showStackEffect) ...[
-          // 뒤쪽 겹친 종이 1
           Positioned(
             left: -3,
             top: 3,
@@ -184,11 +274,20 @@ class HandDrawnContainer extends StatelessWidget {
         ],
         Container(
           decoration: BoxDecoration(
-            color: backgroundColor,
+            color: useMultiply ? Colors.transparent : backgroundColor,
             borderRadius: BorderRadius.circular(borderRadius),
           ),
           child: Stack(
             children: [
+              if (useMultiply && backgroundColor != null)
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _MultiplyBackgroundPainter(
+                      color: backgroundColor!,
+                      borderRadius: borderRadius,
+                    ),
+                  ),
+                ),
               if (useTexture)
                 Positioned.fill(
                   child: CustomPaint(painter: PaperTexturePainter()),
@@ -220,6 +319,32 @@ class HandDrawnContainer extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Multiply 배경 페인터
+class _MultiplyBackgroundPainter extends CustomPainter {
+  final Color color;
+  final double borderRadius;
+
+  _MultiplyBackgroundPainter({required this.color, required this.borderRadius});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..blendMode = BlendMode.multiply;
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Offset.zero & size,
+        Radius.circular(borderRadius),
+      ),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
 
 /// 오래된 종이 질감을 표현하는 페인터

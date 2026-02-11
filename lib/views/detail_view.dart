@@ -139,8 +139,8 @@ class _DetailViewState extends State<DetailView>
                     text: '꿈의 매듭 짓기',
                     rotation: 0.05,
                     color: themeSet.point,
-                    textStyle: AppTheme.labelSmall.copyWith(
-                      color: Colors.white,
+                    textStyle: AppTheme.handwritingMedium.copyWith(
+                      color: AppTheme.creamWhite,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -150,6 +150,7 @@ class _DetailViewState extends State<DetailView>
         ],
       ),
       body: SafeArea(
+        bottom: false,
         child: Stack(
           children: [
             Column(
@@ -247,53 +248,54 @@ class _DetailViewState extends State<DetailView>
 
                         // Logs Timeline
                         _buildLogsHistory(currentGoal, themeSet),
-                        const SizedBox(
-                          height: 140,
-                        ), // Space for sticky bottom button
+                        const SizedBox(height: 40),
                       ],
                     ),
                   ),
                 ),
-              ],
-            ),
-
-            // Sticky Bottom Button
-            if (currentGoal.status == GoalStatus.active)
-              Positioned(
-                left: 24,
-                right: 24,
-                bottom: 20 + MediaQuery.of(context).padding.bottom,
-                child: Bounceable(
-                  onTap: _isSaving ? null : _saveLog,
-                  child: HandDrawnContainer(
-                    backgroundColor: themeSet.point,
-                    borderColor: AppTheme.getSmartBorderColor(themeSet.point),
-                    padding: EdgeInsets.zero,
-                    borderRadius: 16,
-                    child: Container(
-                      height: 60,
-                      alignment: Alignment.center,
-                      child: _isSaving
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 3,
-                              ),
-                            )
-                          : Text(
-                              '오늘의 발걸음 남기기',
-                              style: AppTheme.bodyBold.copyWith(
-                                color: Colors.white,
-                                fontSize: 16,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
+                // 하단 고정 버튼 (SafeArea 적용, 5px 여백)
+                if (currentGoal.status == GoalStatus.active)
+                  SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 5),
+                      child: Bounceable(
+                        onTap: _isSaving ? null : _saveLog,
+                        child: HandDrawnContainer(
+                          backgroundColor: const Color(0xFF8B7355), // 따뜻한 브라운 톤
+                          borderColor: AppTheme.getSmartBorderColor(
+                            const Color(0xFF8B7355),
+                          ),
+                          padding: EdgeInsets.zero,
+                          borderRadius: 16,
+                          useMultiply: true,
+                          child: Container(
+                            height: 60,
+                            alignment: Alignment.center,
+                            child: _isSaving
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      color: AppTheme.creamWhite,
+                                      strokeWidth: 3,
+                                    ),
+                                  )
+                                : Text(
+                                    '오늘의 발걸음 남기기',
+                                    style: AppTheme.bodyBold.copyWith(
+                                      color: AppTheme.creamWhite,
+                                      fontSize: 16,
+                                      letterSpacing: 1.2,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
+              ],
+            ),
 
             if (_showCompletionOverlay)
               _CompletionOverlay(
@@ -566,7 +568,7 @@ class _CompletionOverlay extends StatelessWidget {
                 height: 52,
                 color: themeSet.point,
                 textStyle: AppTheme.bodyBold.copyWith(
-                  color: Colors.white,
+                  color: AppTheme.creamWhite,
                   letterSpacing: 1.0,
                 ),
               ),
