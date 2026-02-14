@@ -38,55 +38,42 @@ class AppTheme {
     return const Color(0xFF263238);
   }
 
-  // ============ 테마 세트 재구성 (Muted Retro Palette) ============
+  // ============ 2026 컬러 트렌드 스마트 팔레트 ============
   static const List<GoalThemeSet> goalThemes = [
     GoalThemeSet(
-      name: '번트 오렌지',
-      background: Color(0xFFFEF6F3),
-      point: Color(0xFFB35C44),
-      text: Color(0xFF4A2A2A),
+      name: 'Lemonade',
+      background: Color(0xFFDDBA7B), // 메인 컬러
+      scaffoldBg: Color(0xFFAE9580), // 상세화면 배경 (Clay)
+      point: Color(0xFFB5542F), // 버튼 & 강조색
+      text: Color(0xFF2D2416), // 텍스트
     ),
     GoalThemeSet(
-      name: '더스티 블루',
-      background: Color(0xFFF1F5F7),
-      point: Color(0xFF5A7684),
-      text: Color(0xFF1D2933),
+      name: 'Olive',
+      background: Color(0xFF6D7843), // 메인 컬러
+      scaffoldBg: Color(0xFFB9B297), // 상세화면 배경
+      point: Color(0xFF4B4B1A), // 버튼 & 강조색
+      text: Color(0xFF1A1A0A), // 텍스트
     ),
     GoalThemeSet(
-      name: '세이지 그린',
-      background: Color(0xFFF4F7F0),
-      point: Color(0xFF7D8461),
-      text: Color(0xFF2D331D),
+      name: 'Blush',
+      background: Color(0xFFD1ACA6), // 메인 컬러
+      scaffoldBg: Color(0xFFE5D1CA), // 상세화면 배경
+      point: Color(0xFFCE938E), // 버튼 & 강조색
+      text: Color(0xFF3D2B28), // 텍스트
     ),
     GoalThemeSet(
-      name: '빈티지 로즈',
-      background: Color(0xFFFDF1F2),
-      point: Color(0xFFD48181),
-      text: Color(0xFF4A2A2A),
+      name: 'Neutral',
+      background: Color(0xFFD3CDC1), // 메인 컬러
+      scaffoldBg: Color(0xFFBD9F81), // 상세화면 배경
+      point: Color(0xFF6C5A46), // 버튼 & 강조색
+      text: Color(0xFF2A2218), // 텍스트
     ),
     GoalThemeSet(
-      name: '코코아 밀크',
-      background: Color(0xFFF7F3F0),
-      point: Color(0xFF967E67),
-      text: Color(0xFF332B24),
-    ),
-    GoalThemeSet(
-      name: '라벤더 안개',
-      background: Color(0xFFF5F3F7),
-      point: Color(0xFF9A8CBF),
-      text: Color(0xFF2D2833),
-    ),
-    GoalThemeSet(
-      name: '포레스트 그린',
-      background: Color(0xFFF0F4F2),
-      point: Color(0xFF5B8A72),
-      text: Color(0xFF1D3328),
-    ),
-    GoalThemeSet(
-      name: '허니 옐로우',
-      background: Color(0xFFFBF8EE),
-      point: Color(0xFFD4AF37),
-      text: Color(0xFF332B10),
+      name: 'Blue',
+      background: Color(0xFFE6EBEF), // 메인 컬러
+      scaffoldBg: Color(0xFF7F92A3), // 상세화면 배경
+      point: Color(0xFF09181B), // 버튼 & 강조색 (Navy)
+      text: Color(0xFF09181B), // 텍스트
     ),
   ];
 
@@ -110,6 +97,20 @@ class AppTheme {
   /// 노이즈 텍스처 데코레이션 (Multiply 모드)
   static BoxDecoration getNoiseTextureDecoration() {
     return const BoxDecoration(color: Colors.transparent);
+  }
+
+  /// 배경색에 따라 자동으로 텍스트 색상 결정 (가독성 보장)
+  static Color getAdaptiveTextColor(Color backgroundColor) {
+    // 휘도 계산 (0.0 ~ 1.0)
+    final luminance = backgroundColor.computeLuminance();
+
+    // 어두운 배경(Clay, Navy 등)일 경우 밝은 크림색 반환
+    if (luminance < 0.5) {
+      return creamWhite; // #FFF9F0
+    }
+
+    // 밝은 배경일 경우 어두운 텍스트 반환
+    return warmBrown; // #3E2723
   }
 
   // ============ 스크랩북 디테일 (Offset Layers & Sketchy Lines) ============
@@ -311,13 +312,15 @@ class AppTheme {
 class GoalThemeSet {
   final String name;
   final Color background;
+  final Color scaffoldBg; // 상세화면 배경색
   final Color point;
   final Color text;
 
   const GoalThemeSet({
     required this.name,
     required this.background,
+    Color? scaffoldBg,
     required this.point,
     required this.text,
-  });
+  }) : scaffoldBg = scaffoldBg ?? background; // 기본값은 background와 동일
 }

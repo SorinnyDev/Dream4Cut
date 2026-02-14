@@ -98,7 +98,7 @@ class _StampSheetState extends State<StampSheet>
           color: themeSet.point,
           textStyle: AppTheme.bodyMedium.copyWith(
             fontWeight: FontWeight.w900,
-            color: themeSet.text.withOpacity(0.8), // 포인트 컬러의 어두운 톤 사용
+            color: AppTheme.getAdaptiveTextColor(themeSet.point),
             letterSpacing: 1.2,
           ),
         ),

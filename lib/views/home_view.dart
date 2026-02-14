@@ -171,23 +171,26 @@ class _HomeViewState extends State<HomeView> {
 
   Widget _buildGoalFrame(GoalProvider provider, int frameIndex) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final cardWidth = screenWidth * 0.42; // 42% 너비
+    final cardWidth = screenWidth * 0.44; // 너비를 약간 확장
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Wrap(
-        spacing: 16, // 가로 간격
-        runSpacing: 0, // 세로 간격 (지그재그로 제어)
+        spacing: 12,
+        runSpacing: 0,
         alignment: WrapAlignment.center,
         children: List.generate(4, (slotIndex) {
           final goal = provider.getGoalAt(frameIndex, slotIndex);
-          final isRightColumn = slotIndex % 2 == 1; // 오른쪽 열
+          final isRightColumn = slotIndex % 2 == 1;
 
           return Container(
             width: cardWidth,
             margin: EdgeInsets.only(
-              top: isRightColumn ? 32 : 0, // 지그재그 효과
-              bottom: 16,
+              top: isRightColumn ? 48.0 : 0.0,
+              bottom: isRightColumn ? 0.0 : 48.0,
             ),
             child: _GoalFrameItem(
               goal: goal,
@@ -214,6 +217,26 @@ class _GoalFrameItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 공통 그림자 스타일 (Warm Brown 계열 이중 그림자)
+    final dualShadows = [
+      BoxShadow(
+        color: const Color(0x1A3E2723), // Soft
+        offset: const Offset(0, 12),
+        blurRadius: 32,
+        spreadRadius: -4,
+      ),
+      BoxShadow(
+        color: const Color(0x4D3E2723), // Sharp
+        offset: const Offset(0, 4),
+        blurRadius: 8,
+        spreadRadius: 0,
+      ),
+    ];
+
+    return RepaintBoundary(child: _buildItemContent(context, dualShadows));
+  }
+
+  Widget _buildItemContent(BuildContext context, List<BoxShadow> dualShadows) {
     if (goal == null) {
       return Bounceable(
         onTap: () {
@@ -226,59 +249,45 @@ class _GoalFrameItem extends StatelessWidget {
           );
         },
         child: AspectRatio(
-          aspectRatio: 3 / 4, // 3:4 비율
+          aspectRatio: 0.7, // 0.7 Aspect Ratio
           child: Container(
             decoration: BoxDecoration(
               color: AppTheme.ivoryPaper.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(2),
               border: Border.all(
                 color: AppTheme.pencilDash.withOpacity(0.5),
                 width: 1,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0x1A3E2723),
-                  offset: const Offset(0, 8),
-                  blurRadius: 24,
-                  spreadRadius: -4,
-                ),
-                BoxShadow(
-                  color: const Color(0x333E2723),
-                  offset: const Offset(0, 2),
-                  blurRadius: 4,
-                  spreadRadius: 0,
-                ),
-              ],
+              boxShadow: dualShadows,
             ),
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    width: 80,
-                    height: 80,
+                    width: 60,
+                    height: 60,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: AppTheme.pencilDash.withOpacity(0.3),
-                        width: 2,
-                        strokeAlign: BorderSide.strokeAlignInside,
+                        width: 1.5,
                       ),
                     ),
                     child: Center(
                       child: Icon(
                         Icons.add_rounded,
                         color: AppTheme.textTertiary.withOpacity(0.3),
-                        size: 32,
+                        size: 28,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   Text(
-                    '새로운 조각을 기다려요',
+                    '새로운 조각',
                     style: AppTheme.labelSmall.copyWith(
                       color: AppTheme.textTertiary.withOpacity(0.6),
-                      letterSpacing: 0.5,
+                      fontSize: 11,
                     ),
                   ),
                 ],
@@ -290,16 +299,15 @@ class _GoalFrameItem extends StatelessWidget {
     }
 
     final cardRandom = math.Random(goal!.id.hashCode);
-    final rotationAngle =
-        (cardRandom.nextDouble() - 0.5) * 0.052; // -1.5도 ~ +1.5도
+    // 1.5 ~ 2.5도 랜덤 회전 (0.026 ~ 0.043 라디안)
+    final baseRotation = 0.026 + (cardRandom.nextDouble() * 0.017);
+    final rotationAngle = cardRandom.nextBool() ? baseRotation : -baseRotation;
 
     final themeIndex = AppTheme.getThemeIndex(goal!.backgroundTheme);
     final themeSet = AppTheme.getGoalTheme(themeIndex);
 
-    final tapeRotation = (cardRandom.nextDouble() - 0.5) * 0.12;
-    // 테이프를 중앙에서 약간 치우치게
-    final tapeOffsetFromCenter =
-        (cardRandom.nextDouble() - 0.5) * 40; // -20 ~ +20px
+    final tapeRotation = (cardRandom.nextDouble() - 0.5) * 0.15;
+    final tapeOffsetFromCenter = (cardRandom.nextDouble() - 0.5) * 30;
 
     return Bounceable(
       onTap: () async {
@@ -314,64 +322,47 @@ class _GoalFrameItem extends StatelessWidget {
       child: Transform.rotate(
         angle: rotationAngle,
         child: AspectRatio(
-          aspectRatio: 3 / 4, // 3:4 비율
+          aspectRatio: 0.7, // 0.7 Aspect Ratio
           child: Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(4),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0x1A3E2723),
-                  offset: const Offset(0, 8),
-                  blurRadius: 24,
-                  spreadRadius: -4,
-                ),
-                BoxShadow(
-                  color: const Color(0x333E2723),
-                  offset: const Offset(0, 2),
-                  blurRadius: 4,
-                  spreadRadius: 0,
-                ),
-              ],
+              borderRadius: BorderRadius.circular(2),
+              boxShadow: dualShadows,
             ),
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final cardWidth = constraints.maxWidth;
-                final tapeLeft = (cardWidth / 2) - 30 + tapeOffsetFromCenter;
-
                 return Column(
                   children: [
-                    // 상단 65% - 테마색 영역
+                    // 상단 65% - 이모지 스테이지
                     Expanded(
                       flex: 65,
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
                           Container(
-                            margin: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               color: themeSet.background,
-                              borderRadius: BorderRadius.circular(2),
+                              borderRadius: BorderRadius.circular(1),
                             ),
                             child: Center(
                               child: Transform.rotate(
-                                angle:
-                                    (cardRandom.nextDouble() - 0.5) *
-                                    0.08, // 이모지 미세 회전
+                                angle: (cardRandom.nextDouble() - 0.5) * 0.1,
                                 child: Container(
                                   decoration: BoxDecoration(
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.15),
-                                        offset: const Offset(0, 4),
-                                        blurRadius: 8,
+                                        color: Colors.black.withOpacity(0.12),
+                                        offset: const Offset(0, 6),
+                                        blurRadius: 10,
                                       ),
                                     ],
                                   ),
                                   child: Text(
                                     goal!.emojiTag,
                                     style: const TextStyle(
-                                      fontSize: 72,
+                                      fontSize: 64,
                                       height: 1.0,
                                     ),
                                   ),
@@ -380,34 +371,32 @@ class _GoalFrameItem extends StatelessWidget {
                             ),
                           ),
                           Positioned(
-                            left: tapeLeft,
-                            top: 4,
+                            left: (cardWidth / 2) - 30 + tapeOffsetFromCenter,
+                            top: -13,
                             child: MaskingTape(
                               rotation: tapeRotation,
                               color: themeSet.point,
-                              opacity: 0.7,
-                              height: 24, // 24px 고정
+                              opacity: 0.75,
+                              height: 22,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    // 하단 35% - 기록 영역
+                    // 하단 35% - 제목 영역 (#FDFDFD 여백)
                     Expanded(
                       flex: 35,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
+                        color: const Color(0xFFFDFDFD),
+                        padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
                         alignment: Alignment.center,
                         child: Text(
                           goal!.title,
                           style: AppTheme.handwritingSmall.copyWith(
                             color: AppTheme.warmBrown,
-                            fontSize: 15, // 15sp
-                            letterSpacing: 0.5, // 0.5px 자간
-                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            letterSpacing: 0.3,
+                            fontWeight: FontWeight.w700,
                           ),
                           textAlign: TextAlign.center,
                           maxLines: 2,

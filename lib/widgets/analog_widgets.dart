@@ -47,65 +47,221 @@ class MaskingTape extends StatelessWidget {
   }
 
   Widget _buildBody(Color tapeColor) {
-    return SizedBox(
-      width: width,
-      height: height,
-      child: Stack(
-        children: [
-          // Multiply 블렌딩 모드를 적용한 배경
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _MultiplyTapePainter(
-                color: tapeColor,
-                clipper: JaggedTapeClipper(),
+    return RepaintBoundary(
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: Stack(
+          children: [
+            // Multiply 블렌딩 모드를 적용한 배경
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _MultiplyTapePainter(
+                  color: tapeColor,
+                  clipper: JaggedTapeClipper(),
+                ),
               ),
             ),
-          ),
 
-          // 테두리 (1.0px 딥 브라운)
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _TapeBorderPainter(
-                borderColor: AppTheme.deepBrownBorder.withOpacity(0.2),
-                clipper: JaggedTapeClipper(),
+            // 테두리 (1.0px 딥 브라운)
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _TapeBorderPainter(
+                  borderColor: AppTheme.deepBrownBorder.withOpacity(0.2),
+                  clipper: JaggedTapeClipper(),
+                ),
               ),
             ),
-          ),
 
-          // 텍스트 영역
-          Align(
-            alignment: Alignment.center,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: text.isNotEmpty
-                  ? Transform.rotate(
-                      angle: 0.026,
-                      child: Text(
-                        text,
-                        style:
-                            textStyle ??
-                            AppTheme.handwritingSmall.copyWith(
-                              color: Colors.black.withOpacity(0.7),
-                              fontSize: 13,
-                            ),
-                        maxLines: 1,
-                      ),
-                    )
-                  : const SizedBox(width: 30),
+            // 텍스트 영역
+            Align(
+              alignment: Alignment.center,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: text.isNotEmpty
+                    ? Transform.rotate(
+                        angle: 0.026,
+                        child: Text(
+                          text,
+                          style:
+                              textStyle ??
+                              AppTheme.handwritingSmall.copyWith(
+                                color: Colors.black.withOpacity(0.7),
+                                fontSize: 13,
+                              ),
+                          maxLines: 1,
+                        ),
+                      )
+                    : const SizedBox(width: 30),
+              ),
             ),
-          ),
 
-          // 미세한 종이 질감(Noise) 오버레이
-          IgnorePointer(
-            child: ClipPath(
-              clipper: JaggedTapeClipper(),
-              child: CustomPaint(painter: TexturePainter(opacity: 0.08)),
+            // 미세한 종이 질감(Noise) 오버레이
+            IgnorePointer(
+              child: ClipPath(
+                clipper: JaggedTapeClipper(),
+                child: CustomPaint(painter: TexturePainter(opacity: 0.08)),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+}
+
+/// 메모지 스티커 위젯 - 5가지 텍스처 구현
+enum MemoTexture { lined, yellow, pink, torn, crumpled }
+
+class MemoSticker extends StatelessWidget {
+  final Widget child;
+  final MemoTexture texture;
+  final double rotation;
+  final double? width;
+  final double? height;
+
+  const MemoSticker({
+    super.key,
+    required this.child,
+    this.texture = MemoTexture.lined,
+    this.rotation = 0.0,
+    this.width,
+    this.height,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.rotate(
+      angle: rotation,
+      child: Container(
+        width: width,
+        height: height,
+        decoration: _buildDecoration(),
+        child: Stack(
+          children: [
+            if (texture == MemoTexture.lined) ...[
+              Positioned.fill(
+                child: RepaintBoundary(
+                  child: CustomPaint(painter: _LinedPainter()),
+                ),
+              ),
+            ],
+            if (texture == MemoTexture.crumpled) ...[
+              Positioned.fill(
+                child: RepaintBoundary(
+                  child: CustomPaint(painter: _CrumpledPainter()),
+                ),
+              ),
+            ],
+            if (texture == MemoTexture.torn) ...[
+              Positioned.fill(
+                child: RepaintBoundary(
+                  child: CustomPaint(painter: _TornPainter()),
+                ),
+              ),
+            ],
+            Padding(padding: const EdgeInsets.all(20), child: child),
+            // 종이 질감 오버레이
+            Positioned.fill(
+              child: IgnorePointer(
+                child: RepaintBoundary(
+                  child: CustomPaint(painter: PaperTexturePainter()),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  BoxDecoration _buildDecoration() {
+    Color bgColor = Colors.white;
+    List<BoxShadow> shadows = [
+      BoxShadow(
+        color: const Color(0x1A3E2723),
+        offset: const Offset(2, 4),
+        blurRadius: 10,
+      ),
+      BoxShadow(
+        color: const Color(0x333E2723),
+        offset: const Offset(0, 1),
+        blurRadius: 2,
+      ),
+    ];
+
+    if (texture == MemoTexture.yellow) {
+      bgColor = const Color(0xFFFFF9C4);
+    } else if (texture == MemoTexture.pink) {
+      bgColor = const Color(0xFFFCE4EC);
+    } else if (texture == MemoTexture.lined) {
+      bgColor = const Color(0xFFFAFAFA);
+    }
+
+    return BoxDecoration(
+      color: bgColor,
+      borderRadius: texture == MemoTexture.torn
+          ? BorderRadius.zero
+          : BorderRadius.circular(2),
+      boxShadow: shadows,
+    );
+  }
+}
+
+class _LinedPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.blue.withOpacity(0.1)
+      ..strokeWidth = 1.0;
+
+    for (double y = 40; y < size.height; y += 24) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+
+    final redPaint = Paint()
+      ..color = Colors.red.withOpacity(0.1)
+      ..strokeWidth = 1.0;
+    canvas.drawLine(const Offset(40, 0), Offset(40, size.height), redPaint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+class _CrumpledPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final random = math.Random(123);
+    final paint = Paint()
+      ..color = Colors.black.withOpacity(0.03)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.5;
+
+    for (int i = 0; i < 15; i++) {
+      final path = Path();
+      path.moveTo(random.nextDouble() * size.width, 0);
+      path.lineTo(
+        random.nextDouble() * size.width,
+        random.nextDouble() * size.height,
+      );
+      path.lineTo(size.width, random.nextDouble() * size.height);
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+class _TornPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Already filled by decoration or could add jagged edge if needed
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
 
 /// Multiply 블렌딩을 적용한 테이프 배경 페인터
@@ -207,17 +363,23 @@ class JaggedTapeClipper extends CustomClipper<Path> {
     path.moveTo(random.nextDouble() * 3, 0);
 
     for (var i = 1; i <= 12; i++) {
-      path.lineTo(size.width / 12 * i, random.nextDouble() * 1.5);
+      path.lineTo(size.width / 12 * i, random.nextDouble() * 2.0);
     }
 
-    path.lineTo(size.width - random.nextDouble() * 4, size.height / 2);
+    // Right edge jagged
+    path.lineTo(size.width - random.nextDouble() * 5, size.height * 0.2);
+    path.lineTo(size.width - random.nextDouble() * 2, size.height * 0.5);
+    path.lineTo(size.width - random.nextDouble() * 5, size.height * 0.8);
     path.lineTo(size.width - random.nextDouble() * 3, size.height);
 
     for (var i = 11; i >= 0; i--) {
-      path.lineTo(size.width / 12 * i, size.height - random.nextDouble() * 1.5);
+      path.lineTo(size.width / 12 * i, size.height - random.nextDouble() * 2.0);
     }
 
-    path.lineTo(random.nextDouble() * 4, size.height / 2);
+    // Left edge jagged
+    path.lineTo(random.nextDouble() * 5, size.height * 0.8);
+    path.lineTo(random.nextDouble() * 2, size.height * 0.5);
+    path.lineTo(random.nextDouble() * 5, size.height * 0.2);
     path.close();
 
     return path;

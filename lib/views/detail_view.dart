@@ -23,6 +23,17 @@ class _DetailViewState extends State<DetailView>
   final TextEditingController _logController = TextEditingController();
   bool _isSaving = false;
   bool _showCompletionOverlay = false;
+  late Future<List<Log>> _logsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshLogs();
+  }
+
+  void _refreshLogs() {
+    _logsFuture = context.read<GoalProvider>().getLogs(widget.goal.id);
+  }
 
   @override
   void dispose() {
@@ -53,6 +64,11 @@ class _DetailViewState extends State<DetailView>
     setState(() => _isSaving = true);
     try {
       await context.read<GoalProvider>().addLog(widget.goal.id, content);
+
+      // 로그 추가 후 리스트 갱신
+      setState(() {
+        _refreshLogs();
+      });
 
       final random = math.Random();
       final message = _successMessages[random.nextInt(_successMessages.length)];
@@ -373,8 +389,15 @@ class _DetailViewState extends State<DetailView>
     final themeIndex = AppTheme.getThemeIndex(currentGoal.backgroundTheme);
     final themeSet = AppTheme.getGoalTheme(themeIndex);
 
+    // 배경색에 따른 적응형 텍스트 색상
+    final adaptiveTextColor = AppTheme.getAdaptiveTextColor(
+      themeSet.scaffoldBg,
+    );
+    // 버튼 색상에 따른 버튼 텍스트 색상
+    final buttonTextColor = AppTheme.getAdaptiveTextColor(themeSet.point);
+
     return Scaffold(
-      backgroundColor: AppTheme.oatSilk,
+      backgroundColor: themeSet.scaffoldBg, // 스마트 팔레트 배경색 적용
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -382,39 +405,70 @@ class _DetailViewState extends State<DetailView>
           currentGoal.title,
           style: AppTheme.titleSmall.copyWith(
             fontWeight: FontWeight.w900,
-            color: themeSet.text,
+            color: adaptiveTextColor,
           ),
         ),
         leading: IconButton(
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
             size: 20,
-            color: themeSet.text,
+            color: adaptiveTextColor,
           ),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          // 수정 버튼
-          if (currentGoal.status == GoalStatus.active)
-            IconButton(
-              icon: Icon(
-                Icons.edit_outlined,
-                color: themeSet.text.withOpacity(0.7),
-                size: 22,
+          // 수정 버튼 (원형 스티커 디자인)
+          if (currentGoal.status == GoalStatus.active) ...[
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Bounceable(
+                onTap: () {
+                  _showEditGoalDialog(context, currentGoal, themeSet);
+                },
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: themeSet.point,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        offset: const Offset(0, 2),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: HandDrawnContainer(
+                      padding: EdgeInsets.zero,
+                      backgroundColor: Colors.transparent,
+                      borderColor: Colors.white.withOpacity(0.5),
+                      borderRadius: 19,
+                      useTexture: false,
+                      child: const Center(
+                        child: Icon(
+                          Icons.edit_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
-              onPressed: () =>
-                  _showEditGoalDialog(context, currentGoal, themeSet),
             ),
+          ],
 
           // 타임캡슐 아이콘 (봉인된 편지)
           if (currentGoal.timeCapsuleMessage != null &&
-              currentGoal.status == GoalStatus.active)
+              currentGoal.status == GoalStatus.active) ...[
             Padding(
               padding: const EdgeInsets.only(right: 8.0),
               child: IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.markunread_mailbox_outlined,
-                  color: AppTheme.textSecondary,
+                  color: adaptiveTextColor.withOpacity(0.8),
                 ),
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -426,8 +480,9 @@ class _DetailViewState extends State<DetailView>
                 },
               ),
             ),
+          ],
 
-          if (currentGoal.status == GoalStatus.active)
+          if (currentGoal.status == GoalStatus.active) ...[
             Padding(
               padding: const EdgeInsets.only(right: 12.0),
               child: Center(
@@ -438,19 +493,26 @@ class _DetailViewState extends State<DetailView>
                     rotation: 0.05,
                     color: themeSet.point,
                     textStyle: AppTheme.handwritingMedium.copyWith(
-                      color: AppTheme.creamWhite,
+                      color: buttonTextColor,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                 ),
               ),
             ),
+          ],
         ],
       ),
       body: SafeArea(
         bottom: false,
         child: Stack(
           children: [
+            // 전체 배경 노이즈 텍스처 (Multiply)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(painter: NoiseTexturePainter(opacity: 0.04)),
+              ),
+            ),
             Column(
               children: [
                 Expanded(
@@ -462,9 +524,11 @@ class _DetailViewState extends State<DetailView>
                           padding: const EdgeInsets.symmetric(
                             horizontal: AppTheme.spacingL,
                           ),
-                          child: StampSheetStack(
-                            totalCount: currentGoal.totalCount,
-                            theme: currentGoal.backgroundTheme,
+                          child: RepaintBoundary(
+                            child: StampSheetStack(
+                              totalCount: currentGoal.totalCount,
+                              theme: currentGoal.backgroundTheme,
+                            ),
                           ),
                         ),
                         const SizedBox(height: AppTheme.spacingL + 10),
@@ -593,11 +657,11 @@ class _DetailViewState extends State<DetailView>
                               child: Container(
                                 alignment: Alignment.center,
                                 child: _isSaving
-                                    ? const SizedBox(
+                                    ? SizedBox(
                                         width: 24,
                                         height: 24,
                                         child: CircularProgressIndicator(
-                                          color: AppTheme.creamWhite,
+                                          color: buttonTextColor,
                                           strokeWidth: 3,
                                         ),
                                       )
@@ -607,7 +671,7 @@ class _DetailViewState extends State<DetailView>
                                         children: [
                                           Icon(
                                             Icons.auto_awesome_rounded,
-                                            color: AppTheme.creamWhite,
+                                            color: buttonTextColor,
                                             size: 22,
                                           ),
                                           const SizedBox(width: 10),
@@ -615,7 +679,7 @@ class _DetailViewState extends State<DetailView>
                                             '오늘의 발걸음 남기기',
                                             style: AppTheme.handwritingMedium
                                                 .copyWith(
-                                                  color: AppTheme.creamWhite,
+                                                  color: buttonTextColor,
                                                   fontSize: 17,
                                                   fontWeight: FontWeight.w700,
                                                   letterSpacing: 0.5,
@@ -664,10 +728,11 @@ class _DetailViewState extends State<DetailView>
 
   Widget _buildLogsHistory(Goal currentGoal, GoalThemeSet themeSet) {
     return FutureBuilder<List<Log>>(
-      future: context.read<GoalProvider>().getLogs(currentGoal.id),
+      future: _logsFuture,
       builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data!.isEmpty)
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return const SizedBox();
+        }
 
         final logs = snapshot.data!;
         final Map<String, List<Log>> groupedLogs = {};
@@ -687,13 +752,24 @@ class _DetailViewState extends State<DetailView>
           itemBuilder: (context, dateIndex) {
             final dateKey = sortedDates[dateIndex];
             final logsForDate = groupedLogs[dateKey]!;
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildDateHeader(dateKey, themeSet),
-                ...logsForDate
-                    .map((log) => _buildLogItem(log, themeSet))
-                    .toList(),
+                ...List.generate(logsForDate.length, (index) {
+                  final log = logsForDate[index];
+                  // 로그마다 고유한 랜덤 값 생성
+                  final random = math.Random(log.id.hashCode);
+                  final rotation = (random.nextDouble() - 0.5) * 0.08;
+                  final xOffset = (random.nextDouble() - 0.5) * 20.0;
+                  final topOverlap = index == 0 ? 0.0 : -15.0; // 미세하게 겹치게
+
+                  return Transform.translate(
+                    offset: Offset(xOffset, topOverlap),
+                    child: _buildLogItem(log, themeSet, random, rotation),
+                  );
+                }),
                 const SizedBox(height: AppTheme.spacingL),
               ],
             );
@@ -710,50 +786,91 @@ class _DetailViewState extends State<DetailView>
         '# ${dateKey.replaceAll('-', ' . ')}',
         style: AppTheme.labelSmall.copyWith(
           fontWeight: FontWeight.w900,
-          color: themeSet.text.withOpacity(0.5),
+          color: AppTheme.getAdaptiveTextColor(
+            themeSet.scaffoldBg,
+          ).withOpacity(0.5),
           letterSpacing: 1.0,
         ),
       ),
     );
   }
 
-  Widget _buildLogItem(Log log, GoalThemeSet themeSet) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
-      child: HandDrawnContainer(
-        showOffsetLayer: false,
-        backgroundColor: Colors.white,
-        borderColor: themeSet.text.withOpacity(0.08),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildLogItem(
+    Log log,
+    GoalThemeSet themeSet,
+    math.Random random,
+    double rotation,
+  ) {
+    // 5가지 텍스처 중 랜덤하게 선택
+    final textures = MemoTexture.values;
+    final texture = textures[random.nextInt(textures.length)];
+
+    // 마스킹 테이프 설정 (위치 다르게)
+    final tapePositions = [
+      Alignment.topCenter,
+      Alignment.topLeft,
+      Alignment.topRight,
+    ];
+    final tapeAlignment = tapePositions[random.nextInt(tapePositions.length)];
+    final tapeRotation = (random.nextDouble() - 0.5) * 0.3;
+
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Stack(
+          clipBehavior: Clip.none,
           children: [
-            Row(
-              children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: themeSet.point.withOpacity(0.8),
-                    shape: BoxShape.circle,
+            MemoSticker(
+              texture: texture,
+              rotation: rotation,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: themeSet.point.withOpacity(0.8),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        '${log.index}번째 꿈의 조각',
+                        style: AppTheme.labelSmall.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.pencilCharcoal.withOpacity(0.4),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  '${log.index}번째 꿈의 조각',
-                  style: AppTheme.labelSmall.copyWith(
-                    fontWeight: FontWeight.w900,
-                    color: themeSet.text.withOpacity(0.5),
+                  const SizedBox(height: 12),
+                  Text(
+                    log.content,
+                    style: AppTheme.bodyRegular.copyWith(
+                      color: AppTheme.pencilCharcoal,
+                      height: 1.6,
+                      fontSize: 14,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              log.content,
-              style: AppTheme.bodyRegular.copyWith(
-                color: themeSet.text,
-                height: 1.6,
+            Positioned.fill(
+              child: Align(
+                alignment: tapeAlignment,
+                child: Transform.translate(
+                  offset: const Offset(0, -12),
+                  child: MaskingTape(
+                    rotation: tapeRotation,
+                    color: themeSet.point,
+                    opacity: 0.6,
+                    height: 24,
+                    width: 60,
+                  ),
+                ),
               ),
             ),
           ],
@@ -763,153 +880,157 @@ class _DetailViewState extends State<DetailView>
   }
 }
 
-class _CompletionOverlay extends StatelessWidget {
+class _CompletionOverlay extends StatefulWidget {
   final Goal goal;
   final VoidCallback onClose;
 
   const _CompletionOverlay({required this.goal, required this.onClose});
 
   @override
+  State<_CompletionOverlay> createState() => _CompletionOverlayState();
+}
+
+class _CompletionOverlayState extends State<_CompletionOverlay>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+  bool _showContent = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+
+    _scaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.4, 1.0, curve: Curves.easeIn),
+      ),
+    );
+
+    _controller.forward();
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() => _showContent = true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final goal = widget.goal;
     final themeIndex = AppTheme.getThemeIndex(goal.backgroundTheme);
     final themeSet = AppTheme.getGoalTheme(themeIndex);
 
     return Material(
-      color: Colors.black.withOpacity(0.88),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.auto_awesome_rounded,
-              color: Colors.amber,
-              size: 80,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'G O A L    I N',
-              style: AppTheme.titleLarge.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 10.0,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              '꿈의 한 마디를 매듭지었습니다.',
-              style: AppTheme.bodyLight.copyWith(
-                color: Colors.white.withOpacity(0.7),
-              ),
-            ),
-            const SizedBox(height: 48),
-
-            if (goal.timeCapsuleMessage != null) ...[
-              HandDrawnContainer(
-                backgroundColor: AppTheme.oatSilk,
-                borderColor: AppTheme.getSmartBorderColor(themeSet.point),
-                padding: const EdgeInsets.all(AppTheme.spacingL),
-                borderRadius: 4,
+      color: Colors.black.withOpacity(0.92),
+      child: InkWell(
+        onTap: widget.onClose,
+        highlightColor: Colors.transparent,
+        splashColor: Colors.transparent,
+        child: Center(
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: SingleChildScrollView(
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(
-                      Icons.mail_outline,
-                      color: AppTheme.textSecondary,
-                      size: 32,
+                      Icons.auto_awesome_rounded,
+                      color: Colors.amber,
+                      size: 80,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
                     Text(
-                      '미래의 나에게서 온 편지',
-                      style: AppTheme.labelSmall.copyWith(
-                        color: AppTheme.textTertiary,
-                        fontWeight: FontWeight.bold,
+                      'G O A L    I N',
+                      style: AppTheme.titleLarge.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 10.0,
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
                     Text(
-                      '"${goal.timeCapsuleMessage}"',
-                      style: AppTheme.titleSmall.copyWith(
-                        color: AppTheme.textPrimary,
-                        fontStyle: FontStyle.italic,
-                        height: 1.5,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 40),
-            ],
-
-            Container(
-              width: 280,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(4),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.white.withOpacity(0.1),
-                    blurRadius: 30,
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(4, (index) {
-                  final isTarget = index == goal.slotIndex;
-                  return Container(
-                    height: 64,
-                    margin: const EdgeInsets.symmetric(vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isTarget
-                          ? themeSet.background.withOpacity(0.6)
-                          : AppTheme.ivoryPaper.withOpacity(0.3),
-                      border: Border.all(
-                        color: isTarget
-                            ? themeSet.text
-                            : AppTheme.pencilDash.withOpacity(0.2),
-                        width: isTarget ? 1.5 : 0.8,
+                      '꿈의 매듭을 지었습니다.',
+                      style: AppTheme.bodyLight.copyWith(
+                        color: Colors.white.withOpacity(0.7),
                       ),
                     ),
-                    child: Center(
-                      child: isTarget
-                          ? Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
+                    const SizedBox(height: 60),
+                    if (goal.timeCapsuleMessage != null) ...[
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 800),
+                        curve: Curves.fastOutSlowIn,
+                        width: 300,
+                        padding: EdgeInsets.only(top: _showContent ? 0 : 100),
+                        child: HandDrawnContainer(
+                          backgroundColor: const Color(0xFFFFFBEB),
+                          borderColor: themeSet.point,
+                          padding: const EdgeInsets.all(28),
+                          borderRadius: 2,
+                          child: Column(
+                            children: [
+                              const Icon(
+                                Icons.mail_rounded,
+                                color: Color(0xFFD97706),
+                                size: 36,
                               ),
-                              child: Text(
-                                goal.title,
-                                style: AppTheme.bodyBold.copyWith(
-                                  color: themeSet.text,
+                              const SizedBox(height: 24),
+                              Text(
+                                '과거의 나로부터 도착한 응원',
+                                style: AppTheme.labelSmall.copyWith(
+                                  color: AppTheme.warmBrown.withOpacity(0.4),
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              Text(
+                                '"${goal.timeCapsuleMessage}"',
+                                style: AppTheme.handwritingMedium.copyWith(
+                                  color: AppTheme.warmBrown,
+                                  fontSize: 18,
+                                  height: 1.6,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
-                            )
-                          : Icon(
-                              Icons.photo_outlined,
-                              color: AppTheme.pencilDash.withOpacity(0.5),
-                              size: 24,
-                            ),
+                              const SizedBox(height: 12),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 48),
+                    ],
+                    Text(
+                      '화면을 터치하여 닫기',
+                      style: AppTheme.labelSmall.copyWith(
+                        color: Colors.white.withOpacity(0.3),
+                        letterSpacing: 1.2,
+                      ),
                     ),
-                  );
-                }),
-              ),
-            ),
-
-            const SizedBox(height: 80),
-            Bounceable(
-              onTap: onClose,
-              child: MaskingTape(
-                text: '우리의 조각 앨범으로',
-                height: 52,
-                color: themeSet.point,
-                textStyle: AppTheme.bodyBold.copyWith(
-                  color: AppTheme.creamWhite,
-                  letterSpacing: 1.0,
+                    const SizedBox(height: 20),
+                  ],
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

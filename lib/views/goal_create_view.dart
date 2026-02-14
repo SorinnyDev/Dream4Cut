@@ -290,18 +290,26 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                               width: double.infinity,
                               alignment: Alignment.center,
                               child: _isSaving
-                                  ? const SizedBox(
+                                  ? SizedBox(
                                       width: 20,
                                       height: 20,
                                       child: CircularProgressIndicator(
-                                        color: AppTheme.creamWhite,
+                                        color: AppTheme.getAdaptiveTextColor(
+                                          AppTheme.getGoalTheme(
+                                            _selectedThemeIndex,
+                                          ).point,
+                                        ),
                                         strokeWidth: 2,
                                       ),
                                     )
                                   : Text(
                                       '꿈의 기록장 시작하기',
                                       style: AppTheme.bodyBold.copyWith(
-                                        color: AppTheme.creamWhite,
+                                        color: AppTheme.getAdaptiveTextColor(
+                                          AppTheme.getGoalTheme(
+                                            _selectedThemeIndex,
+                                          ).point,
+                                        ),
                                         letterSpacing: 2.0,
                                       ),
                                     ),
