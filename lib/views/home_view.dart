@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:math' as math;
 import '../theme/app_theme.dart';
 import '../providers/goal_provider.dart';
-import '../widgets/analog_widgets.dart';
 import '../models/goal.dart';
-import 'detail_view.dart';
-import 'goal_create_view.dart';
+import '../widgets/analog_widgets.dart';
 import 'archived_goals_view.dart';
+import 'dart:math' as math;
+import 'goal_create_view.dart';
+import 'detail_view.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -18,106 +18,138 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   final PageController _pageController = PageController();
-  int _currentPage = 0;
+  final ValueNotifier<int> _currentPageNotifier = ValueNotifier<int>(0);
 
   @override
   void dispose() {
     _pageController.dispose();
+    _currentPageNotifier.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<GoalProvider>(
-      builder: (context, provider, child) {
-        final maxFrameIndex = provider.goals.isNotEmpty
-            ? provider.goals.map((g) => g.frameIndex).reduce(math.max)
+    final stopwatch = Stopwatch()..start();
+
+    final result = Selector<GoalProvider, _HomeViewStateData>(
+      selector: (BuildContext context, GoalProvider provider) =>
+          _HomeViewStateData(
+            goals: provider.goals,
+            isLoading: provider.isLoading,
+          ),
+      shouldRebuild: (_HomeViewStateData prev, _HomeViewStateData next) {
+        return prev.isLoading != next.isLoading || prev.goals != next.goals;
+      },
+      builder: (BuildContext context, _HomeViewStateData data, Widget? child) {
+        if (data.isLoading) {
+          return const Center(
+            child: CircularProgressIndicator(color: AppTheme.warmBrown),
+          );
+        }
+
+        final List<Goal> goals = data.goals;
+        final int maxFrameIndex = goals.isNotEmpty
+            ? goals.map((Goal g) => g.frameIndex).reduce(math.max)
             : 0;
-        final frameCount = math.max(maxFrameIndex + 2, 2);
+        final int totalFrames = math.max(maxFrameIndex + 2, 2);
 
         return Container(
-          color: AppTheme.premiumCream, // 프리미엄 크림 배경
+          color: AppTheme.premiumCream,
           child: SafeArea(
             child: Stack(
-              children: [
-                // 배경 텍스처 및 비네팅
-                Positioned.fill(
+              children: <Widget>[
+                // 배경 텍스처 (Impeller 최적화: 정적 레이어 RepaintBoundary 격리)
+                const Positioned.fill(
                   child: IgnorePointer(
-                    child: Stack(
-                      children: [
-                        CustomPaint(
-                          painter: NoiseTexturePainter(opacity: 0.03),
-                        ),
-                        Container(decoration: AppTheme.getVignetteDecoration()),
-                      ],
+                    child: RepaintBoundary(
+                      child: Stack(
+                        children: <Widget>[
+                          CustomPaint(
+                            painter: NoiseTexturePainter(opacity: 0.03),
+                          ),
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: RadialGradient(
+                                colors: <Color>[
+                                  Colors.transparent,
+                                  Color(0x1A000000),
+                                ],
+                                stops: <double>[0.6, 1.0],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header (Left Aligned, Top Padding 40+)
+                  children: <Widget>[
+                    // 헤더 영역
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(28, 48, 20, 16),
+                      padding: const EdgeInsets.fromLTRB(28, 40, 24, 8),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
+                        children: <Widget>[
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+                            children: <Widget>[
                               Text(
                                 '나의 꿈 기록장',
                                 style: AppTheme.handwritingLarge.copyWith(
-                                  color: AppTheme.warmBrown, // 따뜻한 브라운
-                                  fontSize: 28, // 32에서 28로 축소
-                                  fontWeight: FontWeight.w600, // w700에서 w600으로
+                                  color: AppTheme.warmBrown,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 2),
                               Text(
                                 '오늘의 꿈을 수집해보세요',
                                 style: AppTheme.labelSmall.copyWith(
                                   color: AppTheme.warmBrown.withOpacity(0.5),
                                   letterSpacing: 0.5,
-                                  fontSize: 13,
+                                  fontSize: 14,
                                 ),
                               ),
                             ],
                           ),
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Bounceable(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const ArchivedGoalsView(),
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
+                          Bounceable(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute<void>(
+                                  builder: (BuildContext context) =>
+                                      const ArchivedGoalsView(),
                                 ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: AppTheme.pencilDash.withOpacity(0.3),
-                                    width: 1.0,
-                                  ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: AppTheme.pencilDash.withOpacity(0.3),
+                                  width: 1.0,
                                 ),
-                                child: Text(
-                                  '서랍장',
-                                  style: AppTheme.handwritingMedium.copyWith(
-                                    color: AppTheme.warmBrown,
-                                    fontWeight:
-                                        FontWeight.w500, // bold에서 w500으로
-                                    fontSize: 14, // 15에서 14로
+                                boxShadow: <BoxShadow>[
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
                                   ),
+                                ],
+                              ),
+                              child: Text(
+                                '서랍장',
+                                style: AppTheme.handwritingMedium.copyWith(
+                                  color: AppTheme.warmBrown,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
@@ -129,36 +161,28 @@ class _HomeViewState extends State<HomeView> {
                     Expanded(
                       child: PageView.builder(
                         controller: _pageController,
-                        onPageChanged: (index) =>
-                            setState(() => _currentPage = index),
-                        itemCount: frameCount,
-                        itemBuilder: (context, frameIndex) {
-                          return _buildGoalFrame(provider, frameIndex);
+                        itemCount: totalFrames,
+                        onPageChanged: (int index) {
+                          _currentPageNotifier.value = index;
+                        },
+                        itemBuilder: (BuildContext context, int frameIndex) {
+                          return _buildGoalFrame(context, frameIndex);
                         },
                       ),
                     ),
 
-                    // Indicator
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 24),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(frameCount, (index) {
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: _currentPage == index ? 16 : 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: _currentPage == index
-                                  ? AppTheme.pencilCharcoal
-                                  : AppTheme.pencilCharcoal.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                          );
-                        }),
-                      ),
+                    const SizedBox(height: 8),
+                    ValueListenableBuilder<int>(
+                      valueListenable: _currentPageNotifier,
+                      builder:
+                          (BuildContext context, int currentPage, Widget? _) {
+                            return _buildPageIndicator(
+                              totalFrames,
+                              currentPage,
+                            );
+                          },
                     ),
+                    const SizedBox(height: 8),
                   ],
                 ),
               ],
@@ -167,250 +191,266 @@ class _HomeViewState extends State<HomeView> {
         );
       },
     );
+
+    final int elapsed = stopwatch.elapsedMilliseconds;
+    if (elapsed > 16) {
+      debugPrint("[Performance Warning] HomeView Build Time: ${elapsed}ms");
+    }
+    return result;
   }
 
-  Widget _buildGoalFrame(GoalProvider provider, int frameIndex) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final cardWidth = screenWidth * 0.44; // 너비를 약간 확장
+  Widget _buildGoalFrame(BuildContext context, int frameIndex) {
+    // 인생네컷 감성: 지그재그(Staggered) 레이아웃 구현
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        // 크기를 소폭 줄여 카드 간 상호 간섭 최소화
+        final double cardWidth = constraints.maxWidth * 0.48;
+        final double cardHeight = constraints.maxHeight * 0.42;
 
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(
-        parent: AlwaysScrollableScrollPhysics(),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 0,
-        alignment: WrapAlignment.center,
-        children: List.generate(4, (slotIndex) {
-          final goal = provider.getGoalAt(frameIndex, slotIndex);
-          final isRightColumn = slotIndex % 2 == 1;
+        return Stack(
+          clipBehavior: Clip.none,
+          children: <Widget>[
+            // Slot 0: 상단 좌측
+            Positioned(
+              top: constraints.maxHeight * 0.03,
+              left: constraints.maxWidth * 0.02,
+              width: cardWidth,
+              height: cardHeight,
+              child: _GoalFrameItem(
+                frameIndex: frameIndex,
+                slotIndex: 0,
+                rotation: -0.05,
+              ),
+            ),
+            // Slot 1: 상단 우측 (약간 더 아래로 내려서 Slot 0 제목과 격리)
+            Positioned(
+              top: constraints.maxHeight * 0.12,
+              right: constraints.maxWidth * 0.02,
+              width: cardWidth,
+              height: cardHeight,
+              child: _GoalFrameItem(
+                frameIndex: frameIndex,
+                slotIndex: 1,
+                rotation: 0.04,
+              ),
+            ),
+            // Slot 2: 하단 좌측 (가운데 위주, Slot 0과 겹침 최소화)
+            Positioned(
+              top: constraints.maxHeight * 0.50,
+              left: constraints.maxWidth * 0.04,
+              width: cardWidth,
+              height: cardHeight,
+              child: _GoalFrameItem(
+                frameIndex: frameIndex,
+                slotIndex: 2,
+                rotation: 0.03,
+              ),
+            ),
+            // Slot 3: 하단 우측 (가장 아래, Slot 1 제목과 격리)
+            Positioned(
+              top: constraints.maxHeight * 0.56,
+              right: constraints.maxWidth * 0.02,
+              width: cardWidth,
+              height: cardHeight,
+              child: _GoalFrameItem(
+                frameIndex: frameIndex,
+                slotIndex: 3,
+                rotation: -0.06,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
-          return Container(
-            width: cardWidth,
-            margin: EdgeInsets.only(
-              top: isRightColumn ? 48.0 : 0.0,
-              bottom: isRightColumn ? 0.0 : 48.0,
-            ),
-            child: _GoalFrameItem(
-              goal: goal,
-              frameIndex: frameIndex,
-              slotIndex: slotIndex,
-            ),
-          );
-        }),
-      ),
+  Widget _buildPageIndicator(int count, int current) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List<Widget>.generate(count, (int index) {
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: current == index ? 24 : 8,
+          height: 8,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            color: current == index
+                ? AppTheme.warmBrown
+                : AppTheme.warmBrown.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        );
+      }),
     );
   }
 }
 
 class _GoalFrameItem extends StatelessWidget {
-  final Goal? goal;
   final int frameIndex;
   final int slotIndex;
+  final double rotation;
 
   const _GoalFrameItem({
-    this.goal,
     required this.frameIndex,
     required this.slotIndex,
+    required this.rotation,
   });
 
   @override
   Widget build(BuildContext context) {
-    // 공통 그림자 스타일 (Warm Brown 계열 이중 그림자)
-    final dualShadows = [
-      BoxShadow(
-        color: const Color(0x1A3E2723), // Soft
-        offset: const Offset(0, 12),
-        blurRadius: 32,
-        spreadRadius: -4,
-      ),
-      BoxShadow(
-        color: const Color(0x4D3E2723), // Sharp
-        offset: const Offset(0, 4),
-        blurRadius: 8,
-        spreadRadius: 0,
-      ),
-    ];
-
-    return RepaintBoundary(child: _buildItemContent(context, dualShadows));
-  }
-
-  Widget _buildItemContent(BuildContext context, List<BoxShadow> dualShadows) {
-    if (goal == null) {
-      return Bounceable(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  GoalCreateView(frameIndex: frameIndex, slotIndex: slotIndex),
+    return Selector<GoalProvider, Goal?>(
+      selector: (BuildContext context, GoalProvider provider) =>
+          provider.getGoalAt(frameIndex, slotIndex),
+      builder: (BuildContext context, Goal? goal, Widget? child) {
+        if (goal == null) {
+          return Transform.rotate(
+            angle: rotation,
+            child: Bounceable(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (BuildContext context) => GoalCreateView(
+                      frameIndex: frameIndex,
+                      slotIndex: slotIndex,
+                    ),
+                  ),
+                );
+              },
+              child: HandDrawnContainer(
+                backgroundColor: Colors.white.withOpacity(0.4),
+                borderColor: AppTheme.pencilDash.withOpacity(0.2),
+                showOffsetLayer: false,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Icon(
+                        Icons.add_rounded,
+                        color: AppTheme.warmBrown.withOpacity(0.1),
+                        size: 30,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '새로운 조각',
+                        style: AppTheme.handwritingSmall.copyWith(
+                          color: AppTheme.warmBrown.withOpacity(0.25),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           );
-        },
-        child: AspectRatio(
-          aspectRatio: 0.7, // 0.7 Aspect Ratio
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppTheme.ivoryPaper.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(2),
-              border: Border.all(
-                color: AppTheme.pencilDash.withOpacity(0.5),
-                width: 1,
-              ),
-              boxShadow: dualShadows,
-            ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppTheme.pencilDash.withOpacity(0.3),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        Icons.add_rounded,
-                        color: AppTheme.textTertiary.withOpacity(0.3),
-                        size: 28,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    '새로운 조각',
-                    style: AppTheme.labelSmall.copyWith(
-                      color: AppTheme.textTertiary.withOpacity(0.6),
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    final cardRandom = math.Random(goal!.id.hashCode);
-    // 1.5 ~ 2.5도 랜덤 회전 (0.026 ~ 0.043 라디안)
-    final baseRotation = 0.026 + (cardRandom.nextDouble() * 0.017);
-    final rotationAngle = cardRandom.nextBool() ? baseRotation : -baseRotation;
-
-    final themeIndex = AppTheme.getThemeIndex(goal!.backgroundTheme);
-    final themeSet = AppTheme.getGoalTheme(themeIndex);
-
-    final tapeRotation = (cardRandom.nextDouble() - 0.5) * 0.15;
-    final tapeOffsetFromCenter = (cardRandom.nextDouble() - 0.5) * 30;
-
-    return Bounceable(
-      onTap: () async {
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => DetailView(goal: goal!)),
-        );
-        if (result == true && context.mounted) {
-          context.read<GoalProvider>().setTabIndex(1);
         }
+
+        return PolaroidGoalCard(goal: goal, rotation: rotation);
       },
-      child: Transform.rotate(
-        angle: rotationAngle,
-        child: AspectRatio(
-          aspectRatio: 0.7, // 0.7 Aspect Ratio
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(2),
-              boxShadow: dualShadows,
-            ),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final cardWidth = constraints.maxWidth;
-                return Column(
-                  children: [
-                    // 상단 65% - 이모지 스테이지
+    );
+  }
+}
+
+class PolaroidGoalCard extends StatelessWidget {
+  final Goal goal;
+  final double rotation;
+
+  const PolaroidGoalCard({
+    super.key,
+    required this.goal,
+    required this.rotation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final int themeIndex = AppTheme.getThemeIndex(goal.backgroundTheme);
+    final GoalThemeSet themeSet = AppTheme.getGoalTheme(themeIndex);
+
+    return Transform.rotate(
+      angle: rotation,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.topCenter,
+        children: <Widget>[
+          Bounceable(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (BuildContext context) => DetailView(goal: goal),
+                ),
+              );
+            },
+            child: RepaintBoundary(
+              child: HandDrawnContainer(
+                showStackEffect: true,
+                backgroundColor: Colors.white, // 폴라로이드 외곽 프레임은 흰색
+                borderColor: Colors.black.withOpacity(0.1),
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  children: <Widget>[
+                    // 상단 이미지 영역 (theme color 적용)
                     Expanded(
-                      flex: 65,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: themeSet.background,
-                              borderRadius: BorderRadius.circular(1),
-                            ),
-                            child: Center(
-                              child: Transform.rotate(
-                                angle: (cardRandom.nextDouble() - 0.5) * 0.1,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.12),
-                                        offset: const Offset(0, 6),
-                                        blurRadius: 10,
-                                      ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    goal!.emojiTag,
-                                    style: const TextStyle(
-                                      fontSize: 64,
-                                      height: 1.0,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
+                      flex: 4,
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: themeSet.background.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                        child: Center(
+                          child: Text(
+                            goal.emojiTag,
+                            style: const TextStyle(fontSize: 64),
                           ),
-                          Positioned(
-                            left: (cardWidth / 2) - 30 + tapeOffsetFromCenter,
-                            top: -13,
-                            child: MaskingTape(
-                              rotation: tapeRotation,
-                              color: themeSet.point,
-                              opacity: 0.75,
-                              height: 22,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                    // 하단 35% - 제목 영역 (#FDFDFD 여백)
+                    const SizedBox(height: 12),
+                    // 하단 텍스트 영역
                     Expanded(
-                      flex: 35,
-                      child: Container(
-                        color: const Color(0xFFFDFDFD),
-                        padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
-                        alignment: Alignment.center,
+                      flex: 1,
+                      child: Center(
                         child: Text(
-                          goal!.title,
-                          style: AppTheme.handwritingSmall.copyWith(
+                          goal.title,
+                          style: AppTheme.handwritingMedium.copyWith(
                             color: AppTheme.warmBrown,
-                            fontSize: 14,
-                            letterSpacing: 0.3,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
                           textAlign: TextAlign.center,
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ),
+                    const SizedBox(height: 4),
                   ],
-                );
-              },
+                ),
+              ),
             ),
           ),
-        ),
+          // 마스킹 테이프 추가: 성공 앨범과 동일하게 테마 색상 및 투명도 적용
+          Positioned(
+            top: -15,
+            child: MaskingTape(
+              color: themeSet.point,
+              opacity: 0.5,
+              width: 70,
+              height: 24,
+              rotation: rotation * 0.5,
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _HomeViewStateData {
+  final List<Goal> goals;
+  final bool isLoading;
+
+  _HomeViewStateData({required this.goals, required this.isLoading});
 }

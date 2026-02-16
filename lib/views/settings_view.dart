@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
+import '../widgets/analog_widgets.dart';
 import 'archived_goals_view.dart';
 
 /// 설정 화면 - 앱 설정 및 테마 관리
@@ -8,7 +10,8 @@ class SettingsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final stopwatch = Stopwatch()..start();
+    final result = Scaffold(
       backgroundColor: AppTheme.ivoryPaper,
       body: SafeArea(
         child: ListView(
@@ -21,10 +24,12 @@ class SettingsView extends StatelessWidget {
               context,
               Icons.inventory_2_rounded,
               '보관된 목표 (서랍)',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ArchivedGoalsView()),
-              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ArchivedGoalsView()),
+                );
+              },
             ),
             _buildSettingsItem(context, Icons.palette_outlined, '테마 설정'),
             _buildSettingsItem(
@@ -38,6 +43,12 @@ class SettingsView extends StatelessWidget {
         ),
       ),
     );
+
+    final elapsed = stopwatch.elapsedMilliseconds;
+    if (elapsed > 16) {
+      debugPrint("[Performance Warning] SettingsView Build Time: ${elapsed}ms");
+    }
+    return result;
   }
 
   Widget _buildSettingsItem(
@@ -46,8 +57,13 @@ class SettingsView extends StatelessWidget {
     String title, {
     VoidCallback? onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
+    return Bounceable(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        if (onTap != null) {
+          onTap();
+        }
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: AppTheme.spacingM),
         padding: const EdgeInsets.all(AppTheme.spacingM),

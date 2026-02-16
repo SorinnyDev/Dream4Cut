@@ -11,20 +11,22 @@ class FootstepsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final stopwatch = Stopwatch()..start();
+    final result = Scaffold(
       backgroundColor: AppTheme.ivoryPaper,
       body: SafeArea(
         child: Stack(
           children: [
-            Positioned.fill(
+            const Positioned.fill(
               child: IgnorePointer(
-                child: CustomPaint(painter: PaperTexturePainter()),
+                child: RepaintBoundary(
+                  child: CustomPaint(painter: PaperTexturePainter()),
+                ),
               ),
             ),
-            Consumer<GoalProvider>(
-              builder: (context, provider, child) {
-                final completedGoals = provider.completedGoals;
-
+            Selector<GoalProvider, List<Goal>>(
+              selector: (context, provider) => provider.completedGoals,
+              builder: (context, completedGoals, child) {
                 return DefaultTabController(
                   length: 2,
                   child: Column(
@@ -47,7 +49,12 @@ class FootstepsView extends StatelessWidget {
                         child: TabBarView(
                           children: [
                             _buildAlbumSection(completedGoals),
-                            _buildStatsSection(provider.goals),
+                            Selector<GoalProvider, List<Goal>>(
+                              selector: (context, provider) => provider.goals,
+                              builder: (context, allGoals, _) {
+                                return _buildStatsSection(allGoals);
+                              },
+                            ),
                           ],
                         ),
                       ),
@@ -60,6 +67,14 @@ class FootstepsView extends StatelessWidget {
         ),
       ),
     );
+
+    final elapsed = stopwatch.elapsedMilliseconds;
+    if (elapsed > 16) {
+      debugPrint(
+        "[Performance Warning] FootstepsView Build Time: ${elapsed}ms",
+      );
+    }
+    return result;
   }
 
   Widget _buildAlbumSection(List<Goal> goals) {

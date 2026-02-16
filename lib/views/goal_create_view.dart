@@ -86,7 +86,8 @@ class _GoalCreateViewState extends State<GoalCreateView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final stopwatch = Stopwatch()..start();
+    final result = Scaffold(
       backgroundColor: AppTheme.oatSilk,
       appBar: AppBar(
         title: Text(
@@ -182,8 +183,11 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                             return Padding(
                               padding: const EdgeInsets.only(right: 12),
                               child: Bounceable(
-                                onTap: () =>
-                                    setState(() => _selectedEmoji = emoji),
+                                onTap: () {
+                                  setState(() {
+                                    _selectedEmoji = emoji;
+                                  });
+                                },
                                 child: Container(
                                   width: 70,
                                   height: 70,
@@ -245,8 +249,11 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                           final isSelected = _selectedThemeIndex == index;
                           final themeSet = AppTheme.getGoalTheme(index);
                           return Bounceable(
-                            onTap: () =>
-                                setState(() => _selectedThemeIndex = index),
+                            onTap: () {
+                              setState(() {
+                                _selectedThemeIndex = index;
+                              });
+                            },
                             child: Container(
                               width: 44,
                               height: 44,
@@ -274,7 +281,11 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                       const SizedBox(height: 60),
                       Center(
                         child: Bounceable(
-                          onTap: _isSaving ? null : _saveGoal,
+                          onTap: _isSaving
+                              ? null
+                              : () {
+                                  _saveGoal();
+                                },
                           child: HandDrawnContainer(
                             backgroundColor: AppTheme.getGoalTheme(
                               _selectedThemeIndex,
@@ -326,6 +337,14 @@ class _GoalCreateViewState extends State<GoalCreateView> {
         ),
       ),
     );
+
+    final elapsed = stopwatch.elapsedMilliseconds;
+    if (elapsed > 16) {
+      debugPrint(
+        "[Performance Warning] GoalCreateView Build Time: ${elapsed}ms",
+      );
+    }
+    return result;
   }
 
   Future<void> _saveGoal() async {

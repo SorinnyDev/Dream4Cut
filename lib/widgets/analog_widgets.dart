@@ -28,18 +28,23 @@ class MaskingTape extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Impeller 최적화: Opacity 위젯 대신 Paint 레벨에서 투명도를 조절하여 레이어 분리를 방지함
+    final Color effectiveColor = color.withValues(
+      alpha: isTransparent ? opacity : 0.95,
+    );
+
     return Transform.rotate(
       angle: rotation,
       child: IntrinsicWidth(
         child: Stack(
-          children: [
+          children: <Widget>[
             // 레이어 그림자 (약간 어긋난 단색 레이어)
             Positioned(
               left: 1.5,
               top: 1.5,
-              child: Opacity(opacity: 0.1, child: _buildBody(Colors.black)),
+              child: _buildBody(Colors.black.withValues(alpha: 0.1)),
             ),
-            _buildBody(color.withOpacity(isTransparent ? opacity : 0.95)),
+            _buildBody(effectiveColor),
           ],
         ),
       ),
@@ -52,13 +57,13 @@ class MaskingTape extends StatelessWidget {
         width: width,
         height: height,
         child: Stack(
-          children: [
-            // Multiply 블렌딩 모드를 적용한 배경
+          children: <Widget>[
+            // Impeller의 Multiply 블렌딩 가속을 활용한 배경
             Positioned.fill(
               child: CustomPaint(
                 painter: _MultiplyTapePainter(
                   color: tapeColor,
-                  clipper: JaggedTapeClipper(),
+                  clipper: const JaggedTapeClipper(),
                 ),
               ),
             ),
@@ -67,8 +72,8 @@ class MaskingTape extends StatelessWidget {
             Positioned.fill(
               child: CustomPaint(
                 painter: _TapeBorderPainter(
-                  borderColor: AppTheme.deepBrownBorder.withOpacity(0.2),
-                  clipper: JaggedTapeClipper(),
+                  borderColor: AppTheme.deepBrownBorder.withValues(alpha: 0.2),
+                  clipper: const JaggedTapeClipper(),
                 ),
               ),
             ),
@@ -310,7 +315,7 @@ class _TapeBorderPainter extends CustomPainter {
 /// 질감/노이즈를 그려주는 페인터
 class TexturePainter extends CustomPainter {
   final double opacity;
-  TexturePainter({this.opacity = 0.03});
+  const TexturePainter({this.opacity = 0.03});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -331,7 +336,7 @@ class TexturePainter extends CustomPainter {
 class NoiseTexturePainter extends CustomPainter {
   final double opacity;
 
-  NoiseTexturePainter({this.opacity = 0.03});
+  const NoiseTexturePainter({this.opacity = 0.03});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -355,6 +360,8 @@ class NoiseTexturePainter extends CustomPainter {
 
 /// 양 끝이 손으로 찢은 듯 거친 질감을 표현하는 클리퍼
 class JaggedTapeClipper extends CustomClipper<Path> {
+  const JaggedTapeClipper();
+
   @override
   Path getClip(Size size) {
     var path = Path();
@@ -418,14 +425,14 @@ class HandDrawnContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBorderColor =
+    final Color effectiveBorderColor =
         borderColor ??
         AppTheme.getSmartBorderColor(backgroundColor ?? Colors.white);
 
     return Stack(
       clipBehavior: Clip.none,
-      children: [
-        if (showStackEffect) ...[
+      children: <Widget>[
+        if (showStackEffect) ...<Widget>[
           Positioned(
             left: -3,
             top: 3,
@@ -440,8 +447,8 @@ class HandDrawnContainer extends StatelessWidget {
             borderRadius: BorderRadius.circular(borderRadius),
           ),
           child: Stack(
-            children: [
-              if (useMultiply && backgroundColor != null)
+            children: <Widget>[
+              if (useMultiply && backgroundColor != null) ...<Widget>[
                 Positioned.fill(
                   child: CustomPaint(
                     painter: _MultiplyBackgroundPainter(
@@ -450,10 +457,12 @@ class HandDrawnContainer extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (useTexture)
+              ],
+              if (useTexture) ...<Widget>[
                 Positioned.fill(
-                  child: CustomPaint(painter: PaperTexturePainter()),
+                  child: CustomPaint(painter: const PaperTexturePainter()),
                 ),
+              ],
               CustomPaint(
                 painter: HandDrawnPainter(
                   color: effectiveBorderColor,
@@ -511,6 +520,8 @@ class _MultiplyBackgroundPainter extends CustomPainter {
 
 /// 오래된 종이 질감을 표현하는 페인터
 class PaperTexturePainter extends CustomPainter {
+  const PaperTexturePainter();
+
   @override
   void paint(Canvas canvas, Size size) {
     final random = math.Random(10);

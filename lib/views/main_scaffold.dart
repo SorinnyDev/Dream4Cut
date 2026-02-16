@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../providers/goal_provider.dart';
@@ -27,99 +28,122 @@ class _MainScaffoldState extends State<MainScaffold> {
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    // 탭 인덱스만 개별 구독하여 목표 변경 시 전체 스캐폴드 리빌드 방지
-    final selectedIndex = context.select<GoalProvider, int>(
-      (p) => p.currentTabIndex,
-    );
-
-    // 탭별 배경색 차별화
-    Color backgroundColor;
-    switch (selectedIndex) {
-      case 1:
-        backgroundColor = AppTheme.champagneGold;
-        break;
-      case 2:
-        backgroundColor = AppTheme.archiveBeige;
-        break;
-      default:
-        backgroundColor = AppTheme.oatSilk;
-    }
-
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      body: Stack(
-        children: [
-          // 배경 텍스처 및 비네팅 - RepaintBoundary 추가로 성능 최적화
-          Positioned.fill(
-            child: IgnorePointer(
-              child: RepaintBoundary(
-                child: Stack(
-                  children: [
-                    CustomPaint(painter: NoiseTexturePainter(opacity: 0.03)),
-                    Container(decoration: AppTheme.getVignetteDecoration()),
-                  ],
+    // 1. 배경색만 감시하는 독립된 Selector (Scaffold 전체 리빌드 방지)
+    return Selector<GoalProvider, Color>(
+      selector: (context, provider) {
+        switch (provider.currentTabIndex) {
+          case 1:
+            return AppTheme.champagneGold;
+          case 2:
+            return AppTheme.archiveBeige;
+          default:
+            return AppTheme.oatSilk;
+        }
+      },
+      builder: (BuildContext context, Color backgroundColor, Widget? _) {
+        return Scaffold(
+          backgroundColor: backgroundColor,
+          body: Stack(
+            children: <Widget>[
+              // 배경 텍스처 (최초 1회 렌더링 후 캐싱)
+              const Positioned.fill(
+                child: IgnorePointer(
+                  child: RepaintBoundary(
+                    child: Stack(
+                      children: <Widget>[
+                        CustomPaint(
+                          painter: NoiseTexturePainter(opacity: 0.03),
+                        ),
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: RadialGradient(
+                              colors: <Color>[
+                                Colors.transparent,
+                                Color(0x1A000000),
+                              ],
+                              stops: <double>[0.6, 1.0],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(bottom: 80 + bottomPadding),
-            child: _screens[selectedIndex],
-          ),
 
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: SafeArea(
-              top: false,
-              bottom: true,
-              child: RepaintBoundary(
-                child: Consumer<GoalProvider>(
-                  builder: (context, provider, _) =>
-                      _buildCustomBottomBar(provider),
+              // 본문 영역 (탭 변경 시에만 해당 인덱스로 전환)
+              Padding(
+                padding: EdgeInsets.only(bottom: 80 + bottomPadding),
+                child: Selector<GoalProvider, int>(
+                  selector: (BuildContext context, GoalProvider provider) =>
+                      provider.currentTabIndex,
+                  builder:
+                      (BuildContext context, int selectedIndex, Widget? _) {
+                        return IndexedStack(
+                          index: selectedIndex,
+                          children: _screens,
+                        );
+                      },
                 ),
               ),
-            ),
+
+              // 하단 바 (본문과 완전히 분리하여 별도 레이어에서 렌더링)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: SafeArea(
+                  top: false,
+                  child: RepaintBoundary(
+                    child: Selector<GoalProvider, int>(
+                      selector: (BuildContext context, GoalProvider provider) =>
+                          provider.currentTabIndex,
+                      builder: (BuildContext context, int index, Widget? _) {
+                        return _buildCustomBottomBar(index, context);
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildCustomBottomBar(GoalProvider provider) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final barWidth = screenWidth * 0.90; // 너비를 약간 확장 (90%)
+  Widget _buildCustomBottomBar(int currentTabIndex, BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double barWidth = screenWidth * 0.90;
 
     return Container(
       height: 100,
-      padding: const EdgeInsets.only(bottom: 24), // 하단 24px 플로팅
+      padding: const EdgeInsets.only(bottom: 24),
       alignment: Alignment.bottomCenter,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
-        children: [
+        children: <Widget>[
           // Glassmorphism 배경
           ClipRRect(
             borderRadius: BorderRadius.circular(32),
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
               child: Container(
                 width: barWidth,
                 height: 70,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.85),
+                  color: Colors.white.withOpacity(0.88),
                   borderRadius: BorderRadius.circular(32),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.5),
-                    width: 0.5,
+                    color: Colors.white.withOpacity(0.6),
+                    width: 0.8,
                   ),
-                  boxShadow: [
+                  boxShadow: const <BoxShadow>[
                     BoxShadow(
-                      color: const Color(0x1A3E2723),
-                      offset: const Offset(0, 12),
-                      blurRadius: 24,
-                      spreadRadius: -4,
+                      color: Color(0x0D3E2723),
+                      offset: Offset(0, 10),
+                      blurRadius: 20,
                     ),
                   ],
                 ),
@@ -127,29 +151,28 @@ class _MainScaffoldState extends State<MainScaffold> {
             ),
           ),
 
-          // 선택된 탭 위 마스킹 테이프 애니메이션
+          // 선택된 탭 위 마스킹 테이프 애니메이션 (더 빠르고 탄력적인 곡선 적용)
           AnimatedPositioned(
-            duration: const Duration(milliseconds: 400),
-            curve: Curves.fastOutSlowIn,
-            left: _calculateTapePosition(provider.currentTabIndex),
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutQuart,
+            left: _calculateTapePosition(currentTabIndex),
             bottom: 58,
             child: Transform.rotate(
               angle: -0.04,
-              child: Opacity(
-                opacity: 0.6,
-                child: Container(
-                  width: 44,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: AppTheme.getGoalTheme(0).point, // 기본 테마의 포인트 색
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        offset: const Offset(0, 1),
-                        blurRadius: 2,
-                      ),
-                    ],
-                  ),
+              child: Container(
+                width: 44,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: AppTheme.getGoalTheme(
+                    0,
+                  ).point.withOpacity(0.7), // Opacity handled at Paint level
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.15),
+                      offset: const Offset(0, 1),
+                      blurRadius: 2,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -162,24 +185,27 @@ class _MainScaffoldState extends State<MainScaffold> {
               height: 70,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
+                children: <Widget>[
                   _buildNavItem(
-                    provider,
+                    context,
                     0,
+                    currentTabIndex,
                     Icons.dashboard_outlined,
                     Icons.dashboard_rounded,
                     '오늘의 꿈',
                   ),
                   _buildNavItem(
-                    provider,
+                    context,
                     1,
+                    currentTabIndex,
                     Icons.auto_awesome_outlined,
                     Icons.auto_awesome_rounded,
                     '성공 앨범',
                   ),
                   _buildNavItem(
-                    provider,
+                    context,
                     2,
+                    currentTabIndex,
                     Icons.archive_outlined,
                     Icons.archive_rounded,
                     '기록 보관소',
@@ -194,41 +220,50 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   Widget _buildNavItem(
-    GoalProvider provider,
+    BuildContext context,
     int index,
+    int currentTabIndex,
     IconData icon,
     IconData activeIcon,
     String label,
   ) {
-    final isSelected = provider.currentTabIndex == index;
-    final color = isSelected
+    final bool isSelected = currentTabIndex == index;
+    final Color color = isSelected
         ? AppTheme.warmBrown
-        : AppTheme.warmBrown.withOpacity(0.4);
+        : AppTheme.warmBrown.withValues(alpha: 0.4);
 
     return Expanded(
       child: Bounceable(
         onTap: () {
-          provider.setTabIndex(index);
+          // 화면 전환은 제스처가 확정된 onTap 시점에서 안전하게 수행
+          if (currentTabIndex != index) {
+            context.read<GoalProvider>().setTabIndex(index);
+          }
         },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isSelected ? activeIcon : icon,
-              color: color,
-              size: isSelected ? 26 : 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: AppTheme.handwritingSmall.copyWith(
+        child: Container(
+          color: Colors.transparent, // 터치 영역 확보
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Icon(
+                isSelected ? activeIcon : icon,
                 color: color,
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w900 : FontWeight.w500,
-                letterSpacing: -0.2,
+                size: isSelected ? 26 : 24,
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: AppTheme.handwritingSmall.copyWith(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w900 : FontWeight.w500,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

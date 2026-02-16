@@ -380,10 +380,13 @@ class _DetailViewState extends State<DetailView>
 
   @override
   Widget build(BuildContext context) {
+    final stopwatch = Stopwatch()..start();
     final allGoals = context.watch<GoalProvider>().goals;
     final currentGoal = allGoals.firstWhere(
       (g) => g.id == widget.goal.id,
-      orElse: () => widget.goal,
+      orElse: () {
+        return widget.goal;
+      },
     );
 
     final themeIndex = AppTheme.getThemeIndex(currentGoal.backgroundTheme);
@@ -396,7 +399,7 @@ class _DetailViewState extends State<DetailView>
     // 버튼 색상에 따른 버튼 텍스트 색상
     final buttonTextColor = AppTheme.getAdaptiveTextColor(themeSet.point);
 
-    return Scaffold(
+    final result = Scaffold(
       backgroundColor: themeSet.scaffoldBg, // 스마트 팔레트 배경색 적용
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -414,7 +417,9 @@ class _DetailViewState extends State<DetailView>
             size: 20,
             color: adaptiveTextColor,
           ),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
         actions: [
           // 수정 버튼 (원형 스티커 디자인)
@@ -510,7 +515,11 @@ class _DetailViewState extends State<DetailView>
             // 전체 배경 노이즈 텍스처 (Multiply)
             Positioned.fill(
               child: IgnorePointer(
-                child: CustomPaint(painter: NoiseTexturePainter(opacity: 0.04)),
+                child: RepaintBoundary(
+                  child: const CustomPaint(
+                    painter: NoiseTexturePainter(opacity: 0.04),
+                  ),
+                ),
               ),
             ),
             Column(
@@ -622,7 +631,11 @@ class _DetailViewState extends State<DetailView>
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                       child: Bounceable(
-                        onTap: _isSaving ? null : _saveLog,
+                        onTap: _isSaving
+                            ? null
+                            : () {
+                                _saveLog();
+                              },
                         child: Container(
                           height: 64,
                           decoration: BoxDecoration(
@@ -653,7 +666,11 @@ class _DetailViewState extends State<DetailView>
                             color: Colors.transparent,
                             child: InkWell(
                               borderRadius: BorderRadius.circular(20),
-                              onTap: _isSaving ? null : _saveLog,
+                              onTap: _isSaving
+                                  ? null
+                                  : () {
+                                      _saveLog();
+                                    },
                               child: Container(
                                 alignment: Alignment.center,
                                 child: _isSaving
@@ -700,12 +717,20 @@ class _DetailViewState extends State<DetailView>
             if (_showCompletionOverlay)
               _CompletionOverlay(
                 goal: currentGoal,
-                onClose: () => Navigator.pop(context, true),
+                onClose: () {
+                  Navigator.pop(context, true);
+                },
               ),
           ],
         ),
       ),
     );
+
+    final elapsed = stopwatch.elapsedMilliseconds;
+    if (elapsed > 16) {
+      debugPrint("[Performance Warning] DetailView Build Time: ${elapsed}ms");
+    }
+    return result;
   }
 
   Widget _buildDashedDivider() {
