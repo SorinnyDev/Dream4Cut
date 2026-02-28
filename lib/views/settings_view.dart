@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../theme/app_theme.dart';
 import '../widgets/analog_widgets.dart';
 import 'archived_goals_view.dart';
+import 'notification_settings_view.dart';
 
 /// 설정 화면 - 앱 설정 및 테마 관리
 class SettingsView extends StatelessWidget {
@@ -36,6 +37,15 @@ class SettingsView extends StatelessWidget {
               context,
               Icons.notifications_none_rounded,
               '기록 알림',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (BuildContext context) =>
+                        const NotificationSettingsView(),
+                  ),
+                );
+              },
             ),
             _buildSettingsItem(context, Icons.cloud_upload_outlined, '데이터 백업'),
             _buildSettingsItem(context, Icons.info_outline_rounded, '앱 정보'),
