@@ -14,18 +14,22 @@ class NotificationService {
 
   Future<void> init() async {
     tz.initializeTimeZones();
-    // flutter_timezone 5.x returns TimezoneInfo with identifier
-    final timezoneInfo = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(timezoneInfo.identifier));
+    try {
+      final timezoneInfo = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(timezoneInfo.identifier));
+    } catch (e) {
+      // Fallback to UTC if timezone detection fails
+      tz.setLocalLocation(tz.getLocation('UTC'));
+    }
 
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
     const DarwinInitializationSettings initializationSettingsDarwin =
         DarwinInitializationSettings(
-          requestAlertPermission: true,
-          requestBadgePermission: true,
-          requestSoundPermission: true,
+          requestAlertPermission: false, // Don't request immediately on init
+          requestBadgePermission: false,
+          requestSoundPermission: false,
         );
 
     const InitializationSettings initializationSettings =
@@ -36,10 +40,36 @@ class NotificationService {
 
     await flutterLocalNotificationsPlugin.initialize(
       settings: initializationSettings,
+      onDidReceiveNotificationResponse: (details) {
+        // Handle notification tap if needed
+      },
     );
   }
 
+  Future<bool> requestPermissions() async {
+    bool? granted = false;
+
+    // Android 13+ request
+    granted = await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.requestNotificationsPermission();
+
+    // iOS/Darwin request
+    final bool? darwinGranted = await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >()
+        ?.requestPermissions(alert: true, badge: true, sound: true);
+
+    return (granted ?? false) || (darwinGranted ?? false);
+  }
+
   Future<void> scheduleDailyNotification() async {
+    // Ensure permission is granted
+    await requestPermissions();
+
     await cancelAllNotifications();
 
     const AndroidNotificationDetails androidNotificationDetails =

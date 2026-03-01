@@ -17,6 +17,12 @@ class SettingsProvider with ChangeNotifier {
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     _isNotificationEnabled = prefs.getBool(_notificationKey) ?? false;
+
+    // 만약 알림이 켜져 있다면 앱 시작 시 다시 한 번 스케줄링하여 확실히 등록함
+    if (_isNotificationEnabled) {
+      _notificationService.scheduleDailyNotification();
+    }
+
     notifyListeners();
   }
 
