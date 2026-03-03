@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../theme/app_theme.dart';
 import '../providers/goal_provider.dart';
 import '../models/goal.dart';
@@ -8,6 +9,8 @@ import 'archived_goals_view.dart';
 import 'dart:math' as math;
 import 'goal_create_view.dart';
 import 'detail_view.dart';
+import '../providers/settings_provider.dart';
+import '../services/notification_service.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -29,188 +32,184 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   Widget build(BuildContext context) {
-    final stopwatch = Stopwatch()..start();
+    // 테마 설정을 감시하여 배경 인덱스 변화 시 전체 리빌드 유도
+    final settings = context.watch<SettingsProvider>();
+    debugPrint(
+      "[HomeView] Rebuilding HomeView. backgroundIndex: ${settings.homeBackgroundIndex}",
+    );
 
-    final result = Selector<GoalProvider, _HomeViewStateData>(
-      selector: (BuildContext context, GoalProvider provider) =>
-          _HomeViewStateData(
-            goals: provider.goals,
-            isLoading: provider.isLoading,
-          ),
-      shouldRebuild: (_HomeViewStateData prev, _HomeViewStateData next) {
-        return prev.isLoading != next.isLoading || prev.goals != next.goals;
-      },
-      builder: (BuildContext context, _HomeViewStateData data, Widget? child) {
-        if (data.isLoading) {
-          return const Center(
-            child: CircularProgressIndicator(color: AppTheme.warmBrown),
-          );
-        }
+    return Container(
+      color: AppTheme.premiumCream,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            // 헤더: 타이틀 + Push/서랍장 버튼 (배경 패턴 없음)
+            _buildHeader(context),
 
-        final List<Goal> goals = data.goals;
-        final int maxFrameIndex = goals.isNotEmpty
-            ? goals.map((Goal g) => g.frameIndex).reduce(math.max)
-            : 0;
-        final int totalFrames = math.max(maxFrameIndex + 2, 2);
-
-        return Container(
-          color: AppTheme.premiumCream,
-          child: SafeArea(
-            child: Stack(
-              children: <Widget>[
-                // 배경 텍스처 (Impeller 최적화: 정적 레이어 RepaintBoundary 격리)
-                const Positioned.fill(
-                  child: IgnorePointer(
-                    child: RepaintBoundary(
-                      child: Stack(
-                        children: <Widget>[
-                          CustomPaint(
-                            painter: NoiseTexturePainter(opacity: 0.03),
-                          ),
-                          DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: RadialGradient(
-                                colors: <Color>[
-                                  Colors.transparent,
-                                  Color(0x1A000000),
-                                ],
-                                stops: <double>[0.6, 1.0],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+            // 바디: 배경 패턴 + 목표 카드들
+            Expanded(
+              child: Stack(
+                children: <Widget>[
+                  // 배경 패턴 (바디 영역에만 적용)
+                  Positioned.fill(
+                    child: _buildBackground(settings.homeBackgroundIndex),
                   ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    // 헤더 영역
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(28, 40, 24, 8),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: <Widget>[
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Text(
-                                '나의 꿈 기록장',
-                                style: AppTheme.handwritingLarge.copyWith(
-                                  color: AppTheme.warmBrown,
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '오늘의 꿈을 수집해보세요',
-                                style: AppTheme.labelSmall.copyWith(
-                                  color: AppTheme.warmBrown.withOpacity(0.5),
-                                  letterSpacing: 0.5,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Bounceable(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute<void>(
-                                  builder: (BuildContext context) =>
-                                      const ArchivedGoalsView(),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: AppTheme.pencilDash.withOpacity(0.3),
-                                  width: 1.0,
-                                ),
-                                boxShadow: <BoxShadow>[
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Text(
-                                '서랍장',
-                                style: AppTheme.handwritingMedium.copyWith(
-                                  color: AppTheme.warmBrown,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
 
-                    Expanded(
-                      child: PageView.builder(
+                  // 목표 카드 페이지뷰
+                  Selector<GoalProvider, _HomeViewStateData>(
+                    selector: (context, provider) => _HomeViewStateData(
+                      goals: provider.goals,
+                      isLoading: provider.isLoading,
+                    ),
+                    builder: (context, data, child) {
+                      if (data.isLoading) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            color: AppTheme.warmBrown,
+                          ),
+                        );
+                      }
+
+                      final goals = data.goals;
+                      final int maxFrameIndex = goals.isNotEmpty
+                          ? goals.map((g) => g.frameIndex).reduce(math.max)
+                          : 0;
+                      final int totalFrames = math.max(maxFrameIndex + 2, 2);
+
+                      return PageView.builder(
                         controller: _pageController,
                         itemCount: totalFrames,
-                        onPageChanged: (int index) {
-                          _currentPageNotifier.value = index;
-                        },
-                        itemBuilder: (BuildContext context, int frameIndex) {
-                          return _buildGoalFrame(context, frameIndex);
-                        },
-                      ),
-                    ),
+                        onPageChanged: (index) =>
+                            _currentPageNotifier.value = index,
+                        itemBuilder: (context, frameIndex) =>
+                            _buildGoalFrame(context, frameIndex),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
 
-                    const SizedBox(height: 8),
-                    ValueListenableBuilder<int>(
-                      valueListenable: _currentPageNotifier,
-                      builder:
-                          (BuildContext context, int currentPage, Widget? _) {
-                            return _buildPageIndicator(
-                              totalFrames,
-                              currentPage,
-                            );
-                          },
-                    ),
-                    const SizedBox(height: 8),
-                  ],
+            // 페이지 인디케이터
+            const SizedBox(height: 8),
+            ValueListenableBuilder<int>(
+              valueListenable: _currentPageNotifier,
+              builder: (context, currentPage, _) {
+                return Selector<GoalProvider, int>(
+                  selector: (context, provider) {
+                    final maxIdx = provider.goals.isNotEmpty
+                        ? provider.goals
+                              .map((g) => g.frameIndex)
+                              .reduce(math.max)
+                        : 0;
+                    return math.max(maxIdx + 2, 2);
+                  },
+                  builder: (context, totalFrames, _) {
+                    return _buildPageIndicator(totalFrames, currentPage);
+                  },
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 40, 20, 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: <Widget>[
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  '나의 꿈 기록장',
+                  style: AppTheme.handwritingLarge.copyWith(
+                    color: AppTheme.warmBrown,
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '오늘의 꿈을 수집해보세요',
+                  style: AppTheme.labelSmall.copyWith(
+                    color: AppTheme.warmBrown.withOpacity(0.5),
+                    letterSpacing: 0.5,
+                    fontSize: 14,
+                  ),
                 ),
               ],
             ),
           ),
-        );
-      },
+          const SizedBox(width: 8),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Bounceable(
+                onTap: () => NotificationService().showImmediateNotification(),
+                child: _buildHeaderButton('Push'),
+              ),
+              const SizedBox(width: 6),
+              Bounceable(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const ArchivedGoalsView(),
+                    ),
+                  );
+                },
+                child: _buildHeaderButton('서랍장'),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
+  }
 
-    final int elapsed = stopwatch.elapsedMilliseconds;
-    if (elapsed > 16) {
-      debugPrint("[Performance Warning] HomeView Build Time: ${elapsed}ms");
-    }
-    return result;
+  Widget _buildHeaderButton(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.pencilDash.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Text(
+        text,
+        style: AppTheme.handwritingMedium.copyWith(
+          color: AppTheme.warmBrown,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
   }
 
   Widget _buildGoalFrame(BuildContext context, int frameIndex) {
-    // 인생네컷 감성: 지그재그(Staggered) 레이아웃 구현
     return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        // 크기를 소폭 줄여 카드 간 상호 간섭 최소화
+      builder: (context, constraints) {
         final double cardWidth = constraints.maxWidth * 0.48;
         final double cardHeight = constraints.maxHeight * 0.42;
 
         return Stack(
           clipBehavior: Clip.none,
           children: <Widget>[
-            // Slot 0: 상단 좌측
             Positioned(
               top: constraints.maxHeight * 0.03,
               left: constraints.maxWidth * 0.02,
@@ -222,7 +221,6 @@ class _HomeViewState extends State<HomeView> {
                 rotation: -0.05,
               ),
             ),
-            // Slot 1: 상단 우측 (약간 더 아래로 내려서 Slot 0 제목과 격리)
             Positioned(
               top: constraints.maxHeight * 0.12,
               right: constraints.maxWidth * 0.02,
@@ -234,7 +232,6 @@ class _HomeViewState extends State<HomeView> {
                 rotation: 0.04,
               ),
             ),
-            // Slot 2: 하단 좌측 (가운데 위주, Slot 0과 겹침 최소화)
             Positioned(
               top: constraints.maxHeight * 0.50,
               left: constraints.maxWidth * 0.04,
@@ -246,7 +243,6 @@ class _HomeViewState extends State<HomeView> {
                 rotation: 0.03,
               ),
             ),
-            // Slot 3: 하단 우측 (가장 아래, Slot 1 제목과 격리)
             Positioned(
               top: constraints.maxHeight * 0.56,
               right: constraints.maxWidth * 0.02,
@@ -261,6 +257,75 @@ class _HomeViewState extends State<HomeView> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildBackground(int index) {
+    if (index == 1) {
+      return Container(
+        color: Colors.white,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: CustomPaint(painter: GridPaperPainter(gridSize: 24)),
+            ),
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(painter: PaperTexturePainter()),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (index == 2) {
+      return Container(
+        color: Colors.white,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: CustomPaint(painter: LinedPaperPainter(lineHeight: 28)),
+            ),
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(painter: PaperTexturePainter()),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (index == 3) {
+      return Container(
+        color: const Color(0xFFFFFDE7),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: SvgPicture.asset(
+                'assets/backgrounds/legal_pad.svg',
+                fit: BoxFit.cover,
+              ),
+            ),
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(painter: PaperTexturePainter()),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return const Stack(
+      children: <Widget>[
+        CustomPaint(painter: NoiseTexturePainter(opacity: 0.03)),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              colors: <Color>[Colors.transparent, Color(0x1A000000)],
+              stops: <double>[0.6, 1.0],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -289,7 +354,6 @@ class _GoalFrameItem extends StatelessWidget {
   final int frameIndex;
   final int slotIndex;
   final double rotation;
-
   const _GoalFrameItem({
     required this.frameIndex,
     required this.slotIndex,
@@ -299,9 +363,9 @@ class _GoalFrameItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Selector<GoalProvider, Goal?>(
-      selector: (BuildContext context, GoalProvider provider) =>
+      selector: (context, provider) =>
           provider.getGoalAt(frameIndex, slotIndex),
-      builder: (BuildContext context, Goal? goal, Widget? child) {
+      builder: (context, goal, child) {
         if (goal == null) {
           return Transform.rotate(
             angle: rotation,
@@ -310,7 +374,7 @@ class _GoalFrameItem extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute<void>(
-                    builder: (BuildContext context) => GoalCreateView(
+                    builder: (_) => GoalCreateView(
                       frameIndex: frameIndex,
                       slotIndex: slotIndex,
                     ),
@@ -318,23 +382,27 @@ class _GoalFrameItem extends StatelessWidget {
                 );
               },
               child: HandDrawnContainer(
-                backgroundColor: Colors.white.withOpacity(0.4),
-                borderColor: AppTheme.pencilDash.withOpacity(0.2),
-                showOffsetLayer: false,
+                backgroundColor: Colors.white.withOpacity(0.8),
+                borderColor: Colors.black.withOpacity(0.5),
+                strokeWidth: 1.5,
+                showOffsetLayer: true,
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       Icon(
                         Icons.add_rounded,
-                        color: AppTheme.warmBrown.withOpacity(0.1),
+                        color: AppTheme.warmBrown.withOpacity(
+                          0.3,
+                        ), // More visible icon
                         size: 30,
                       ),
-                      const SizedBox(height: 4),
                       Text(
                         '새로운 조각',
                         style: AppTheme.handwritingSmall.copyWith(
-                          color: AppTheme.warmBrown.withOpacity(0.25),
+                          color: AppTheme.warmBrown.withOpacity(
+                            0.5,
+                          ), // More visible text
                           fontSize: 14,
                         ),
                       ),
@@ -345,7 +413,6 @@ class _GoalFrameItem extends StatelessWidget {
             ),
           );
         }
-
         return PolaroidGoalCard(goal: goal, rotation: rotation);
       },
     );
@@ -355,7 +422,6 @@ class _GoalFrameItem extends StatelessWidget {
 class PolaroidGoalCard extends StatelessWidget {
   final Goal goal;
   final double rotation;
-
   const PolaroidGoalCard({
     super.key,
     required this.goal,
@@ -377,61 +443,54 @@ class PolaroidGoalCard extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute<void>(
-                  builder: (BuildContext context) => DetailView(goal: goal),
-                ),
+                MaterialPageRoute<void>(builder: (_) => DetailView(goal: goal)),
               );
             },
-            child: RepaintBoundary(
-              child: HandDrawnContainer(
-                showStackEffect: true,
-                backgroundColor: Colors.white, // 폴라로이드 외곽 프레임은 흰색
-                borderColor: Colors.black.withOpacity(0.1),
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  children: <Widget>[
-                    // 상단 이미지 영역 (theme color 적용)
-                    Expanded(
-                      flex: 4,
-                      child: Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: themeSet.background.withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                        child: Center(
-                          child: Text(
-                            goal.emojiTag,
-                            style: const TextStyle(fontSize: 64),
-                          ),
-                        ),
+            child: HandDrawnContainer(
+              showStackEffect: true,
+              backgroundColor: Colors.white,
+              borderColor: Colors.black.withOpacity(0.1),
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                children: <Widget>[
+                  Expanded(
+                    flex: 4,
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: themeSet.background.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    // 하단 텍스트 영역
-                    Expanded(
-                      flex: 1,
                       child: Center(
                         child: Text(
-                          goal.title,
-                          style: AppTheme.handwritingMedium.copyWith(
-                            color: AppTheme.warmBrown,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          goal.emojiTag,
+                          style: const TextStyle(fontSize: 64),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    flex: 1,
+                    child: Center(
+                      child: Text(
+                        goal.title,
+                        style: AppTheme.handwritingMedium.copyWith(
+                          color: AppTheme.warmBrown,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                ],
               ),
             ),
           ),
-          // 마스킹 테이프 추가: 성공 앨범과 동일하게 테마 색상 및 투명도 적용
           Positioned(
             top: -15,
             child: MaskingTape(
@@ -451,6 +510,5 @@ class PolaroidGoalCard extends StatelessWidget {
 class _HomeViewStateData {
   final List<Goal> goals;
   final bool isLoading;
-
   _HomeViewStateData({required this.goals, required this.isLoading});
 }

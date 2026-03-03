@@ -19,7 +19,7 @@ class MainScaffold extends StatefulWidget {
 
 class _MainScaffoldState extends State<MainScaffold> {
   final List<Widget> _screens = [
-    const HomeView(),
+    HomeView(), // Removed const
     const FootstepsView(),
     const SettingsView(),
   ];
@@ -48,25 +48,21 @@ class _MainScaffoldState extends State<MainScaffold> {
               // 배경 텍스처 (최초 1회 렌더링 후 캐싱)
               const Positioned.fill(
                 child: IgnorePointer(
-                  child: RepaintBoundary(
-                    child: Stack(
-                      children: <Widget>[
-                        CustomPaint(
-                          painter: NoiseTexturePainter(opacity: 0.03),
-                        ),
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: RadialGradient(
-                              colors: <Color>[
-                                Colors.transparent,
-                                Color(0x1A000000),
-                              ],
-                              stops: <double>[0.6, 1.0],
-                            ),
+                  child: Stack(
+                    children: <Widget>[
+                      CustomPaint(painter: NoiseTexturePainter(opacity: 0.03)),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: RadialGradient(
+                            colors: <Color>[
+                              Colors.transparent,
+                              Color(0x1A000000),
+                            ],
+                            stops: <double>[0.6, 1.0],
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),

@@ -725,3 +725,60 @@ class _BounceableState extends State<Bounceable>
     );
   }
 }
+
+/// 격자(Grid) 무늬 속지 페인터
+class GridPaperPainter extends CustomPainter {
+  final double gridSize;
+  final Color color;
+
+  GridPaperPainter({this.gridSize = 25.0, this.color = Colors.black});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color.withOpacity(0.5)
+      ..strokeWidth = 1.2;
+
+    for (double x = 0; x <= size.width; x += gridSize) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (double y = 0; y <= size.height; y += gridSize) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+/// 유선(Lined) 무늬 속지 페인터
+class LinedPaperPainter extends CustomPainter {
+  final double lineHeight;
+  final Color color;
+  final Color verticalLineColor;
+
+  LinedPaperPainter({
+    this.lineHeight = 24.0,
+    this.color = Colors.black,
+    this.verticalLineColor = Colors.red,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color.withOpacity(0.4)
+      ..strokeWidth = 1.2;
+
+    for (double y = lineHeight; y < size.height; y += lineHeight) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+
+    final redPaint = Paint()
+      ..color = verticalLineColor.withOpacity(0.5)
+      ..strokeWidth = 1.8;
+    canvas.drawLine(const Offset(40, 0), Offset(40, size.height), redPaint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}

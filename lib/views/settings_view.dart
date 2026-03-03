@@ -4,6 +4,7 @@ import '../theme/app_theme.dart';
 import '../widgets/analog_widgets.dart';
 import 'archived_goals_view.dart';
 import 'notification_settings_view.dart';
+import 'theme_settings_view.dart';
 
 /// 설정 화면 - 앱 설정 및 테마 관리
 class SettingsView extends StatelessWidget {
@@ -32,7 +33,17 @@ class SettingsView extends StatelessWidget {
                 );
               },
             ),
-            _buildSettingsItem(context, Icons.palette_outlined, '테마 설정'),
+            _buildSettingsItem(
+              context,
+              Icons.palette_outlined,
+              '테마 설정',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ThemeSettingsView()),
+                );
+              },
+            ),
             _buildSettingsItem(
               context,
               Icons.notifications_none_rounded,
