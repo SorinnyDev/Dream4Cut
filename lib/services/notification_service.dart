@@ -78,8 +78,8 @@ class NotificationService {
   }
 
   Future<void> scheduleDailyNotification() async {
-    // Ensure permission is granted
-    await requestPermissions();
+    // 권한 요청은 SettingsProvider에서 첫 실행 시 1회만 처리함
+    // (여기서 다시 호출하면 팝업이 중복으로 뜸)
 
     await cancelAllNotifications();
 
@@ -102,33 +102,49 @@ class NotificationService {
       iOS: DarwinNotificationDetails(),
     );
 
+    final scheduledDate = _nextInstanceOfTenPM();
+    debugPrint("[NotificationService] Scheduling for: $scheduledDate");
+
+    // 1. 정확한 알람 예약 시도
     try {
       await flutterLocalNotificationsPlugin.zonedSchedule(
         id: 0,
         title: selectedMessage['title'],
         body: selectedMessage['body'],
-        scheduledDate: _nextInstanceOfTenPM(),
+        scheduledDate: scheduledDate,
         notificationDetails: notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         matchDateTimeComponents: DateTimeComponents.time,
       );
+      debugPrint(
+        "[NotificationService] ✅ Exact alarm scheduled successfully for: $scheduledDate",
+      );
+      return;
     } catch (e) {
-      if (e is Exception &&
-          e.toString().contains('exact_alarms_not_permitted')) {
-        debugPrint(
-          "[NotificationService] Exact alarm not permitted. Error: $e",
-        );
-        // Fallback to non-exact if possible, or just log.
-      } else {
-        debugPrint("[NotificationService] Scheduling error: $e");
-      }
+      debugPrint("[NotificationService] ⚠️ Exact alarm failed: $e");
     }
 
-    debugPrint("[NotificationService] Scheduled at: ${_nextInstanceOfTenPM()}");
+    // 2. 정확한 알람 실패 시 inexact 모드로 폴백
+    try {
+      await flutterLocalNotificationsPlugin.zonedSchedule(
+        id: 0,
+        title: selectedMessage['title'],
+        body: selectedMessage['body'],
+        scheduledDate: scheduledDate,
+        notificationDetails: notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+      debugPrint(
+        "[NotificationService] ✅ Inexact alarm scheduled (fallback) for: $scheduledDate",
+      );
+    } catch (e) {
+      debugPrint("[NotificationService] ❌ All scheduling attempts failed: $e");
+    }
   }
 
   Future<void> showImmediateNotification() async {
-    await requestPermissions();
+    // 권한은 첫 실행 시 이미 요청됨
 
     // 테스트 시에도 동일한 랜덤 문구 중 하나를 선택하도록 변경
     final randomIdx = math.Random().nextInt(_randomMessages.length);
