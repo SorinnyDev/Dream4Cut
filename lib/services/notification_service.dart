@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter/foundation.dart';
 
@@ -23,12 +23,19 @@ class NotificationService {
   ];
 
   Future<void> init() async {
-    tz.initializeTimeZones();
+    tz_data.initializeTimeZones();
     try {
-      final timezoneInfo = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(timezoneInfo.identifier));
+      final dynamic timezoneResult = await FlutterTimezone.getLocalTimezone();
+      final String timezoneName = (timezoneResult is String)
+          ? timezoneResult
+          : (timezoneResult as dynamic).identifier;
+
+      tz.setLocalLocation(tz.getLocation(timezoneName));
+      debugPrint("[NotificationService] Local timezone set to: $timezoneName");
     } catch (e) {
-      // Fallback to UTC if timezone detection fails
+      debugPrint(
+        "[NotificationService] Timezone initialization failed, falling back to UTC: $e",
+      );
       tz.setLocalLocation(tz.getLocation('UTC'));
     }
 
@@ -54,6 +61,24 @@ class NotificationService {
         // Handle notification tap if needed
       },
     );
+
+    // Android 전용: 알림 채널 명시적 생성
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final androidImplementation = flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+
+      const AndroidNotificationChannel channel = AndroidNotificationChannel(
+        'dream4cut_daily_reminder',
+        '매일 밤 꿈 기록 알림',
+        description: '매일 오후 10시에 꿈 기록을 장려하는 알림입니다.',
+        importance: Importance.max,
+      );
+
+      await androidImplementation?.createNotificationChannel(channel);
+      debugPrint("[NotificationService] Android notification channel created.");
+    }
   }
 
   Future<bool> requestPermissions() async {
@@ -77,13 +102,53 @@ class NotificationService {
     return (granted ?? false) || (darwinGranted ?? false);
   }
 
-  Future<void> scheduleDailyNotification() async {
-    // 권한 요청은 SettingsProvider에서 첫 실행 시 1회만 처리함
-    // (여기서 다시 호출하면 팝업이 중복으로 뜸)
+  // 정확한 알람 예약 권한이 있는지 확인 (Android 13+ 대응)
+  Future<bool> checkExactAlarmPermission() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return true;
 
+    final androidImplementation = flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+
+    return await androidImplementation?.canScheduleExactNotifications() ??
+        false;
+  }
+
+  // 시스템 알람 설정 화면으로 이동 (추후 MethodChannel 등을 통해 구현 가능)
+  Future<void> openAlarmSettings() async {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      debugPrint(
+        "[NotificationService] Guide user to: android.settings.REQUEST_SCHEDULE_EXACT_ALARM",
+      );
+    }
+  }
+
+  Future<void> scheduleDailyNotification() async {
+    await _scheduleNotificationAt(
+      id: 0,
+      time: _nextInstanceOfTenPM(),
+      isDaily: true,
+    );
+  }
+
+  // 1분 후 예약을 테스트할 수 있는 기능 추가
+  Future<void> scheduleTestNotification() async {
+    final now = tz.TZDateTime.now(tz.local);
+    final testTime = now.add(const Duration(minutes: 1));
+    debugPrint(
+      "[NotificationService] Scheduled TEST notification for 1 minute later: $testTime",
+    );
+    await _scheduleNotificationAt(id: 999, time: testTime, isDaily: false);
+  }
+
+  Future<void> _scheduleNotificationAt({
+    required int id,
+    required tz.TZDateTime time,
+    required bool isDaily,
+  }) async {
     await cancelAllNotifications();
 
-    // 5개의 문구 중 랜덤 선택
     final randomIdx = math.Random().nextInt(_randomMessages.length);
     final selectedMessage = _randomMessages[randomIdx];
 
@@ -94,52 +159,57 @@ class NotificationService {
           channelDescription: '매일 오후 10시에 꿈 기록을 장려하는 알림입니다.',
           importance: Importance.max,
           priority: Priority.high,
-          showWhen: false,
+          visibility: NotificationVisibility.public,
+          fullScreenIntent: true, // 잠금화면에서도 잘 보이도록 함
         );
 
     const NotificationDetails notificationDetails = NotificationDetails(
       android: androidNotificationDetails,
-      iOS: DarwinNotificationDetails(),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
     );
 
-    final scheduledDate = _nextInstanceOfTenPM();
-    debugPrint("[NotificationService] Scheduling for: $scheduledDate");
+    debugPrint(
+      "[NotificationService] Current local time: ${tz.TZDateTime.now(tz.local)}",
+    );
+    debugPrint("[NotificationService] Scheduling notification at: $time");
 
-    // 1. 정확한 알람 예약 시도
     try {
       await flutterLocalNotificationsPlugin.zonedSchedule(
-        id: 0,
+        id: id,
         title: selectedMessage['title'],
         body: selectedMessage['body'],
-        scheduledDate: scheduledDate,
+        scheduledDate: time,
         notificationDetails: notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        matchDateTimeComponents: DateTimeComponents.time,
+        matchDateTimeComponents: isDaily ? DateTimeComponents.time : null,
       );
       debugPrint(
-        "[NotificationService] ✅ Exact alarm scheduled successfully for: $scheduledDate",
+        "[NotificationService] ✅ Notification successfully scheduled for: $time",
       );
-      return;
     } catch (e) {
-      debugPrint("[NotificationService] ⚠️ Exact alarm failed: $e");
-    }
-
-    // 2. 정확한 알람 실패 시 inexact 모드로 폴백
-    try {
-      await flutterLocalNotificationsPlugin.zonedSchedule(
-        id: 0,
-        title: selectedMessage['title'],
-        body: selectedMessage['body'],
-        scheduledDate: scheduledDate,
-        notificationDetails: notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        matchDateTimeComponents: DateTimeComponents.time,
-      );
       debugPrint(
-        "[NotificationService] ✅ Inexact alarm scheduled (fallback) for: $scheduledDate",
+        "[NotificationService] ⚠️ Exact schedule failed, trying fallback: $e",
       );
-    } catch (e) {
-      debugPrint("[NotificationService] ❌ All scheduling attempts failed: $e");
+      try {
+        await flutterLocalNotificationsPlugin.zonedSchedule(
+          id: id,
+          title: selectedMessage['title'],
+          body: selectedMessage['body'],
+          scheduledDate: time,
+          notificationDetails: notificationDetails,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          matchDateTimeComponents: isDaily ? DateTimeComponents.time : null,
+        );
+        debugPrint(
+          "[NotificationService] ✅ Inexact notification scheduled as fallback.",
+        );
+      } catch (e2) {
+        debugPrint("[NotificationService] ❌ Fatal error in scheduling: $e2");
+      }
     }
   }
 
