@@ -158,4 +158,18 @@ class GoalProvider with ChangeNotifier {
       await loadGoals();
     }
   }
+
+  Future<void> deleteGoal(String id) async {
+    await _repository.deleteGoal(id);
+    await loadGoals();
+  }
+
+  /// 1페이지(frameIndex 0)를 초과하는 모든 목표를 삭제합니다. (초기 기획 변경에 따른 데이터 정리용)
+  Future<void> deleteExtraPageGoals() async {
+    final extraGoals = _goals.where((g) => g.frameIndex >= 1).toList();
+    for (var goal in extraGoals) {
+      await _repository.deleteGoal(goal.id);
+    }
+    await loadGoals();
+  }
 }

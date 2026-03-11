@@ -112,6 +112,7 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                         '나의 꿈은 무엇인가요?',
                         style: AppTheme.titleSmall.copyWith(
                           fontWeight: FontWeight.w900,
+                          color: AppTheme.textPrimary,
                           height: 1.4,
                         ),
                       ),
@@ -120,13 +121,13 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                         controller: _titleController,
                         decoration: InputDecoration(
                           hintText: '꿈의 이름을 알려주세요',
-                          hintStyle: AppTheme.bodyRegular.copyWith(
+                          hintStyle: AppTheme.handwritingLarge.copyWith(
                             color: AppTheme.textTertiary.withOpacity(0.4),
                           ),
                         ),
-                        style: AppTheme.titleMedium.copyWith(
-                          color: AppTheme.textPrimary,
-                          fontWeight: FontWeight.w900,
+                        style: AppTheme.handwritingLarge.copyWith(
+                          color: AppTheme.pencilCharcoal,
+                          fontSize: 32,
                         ),
                       ),
                       const SizedBox(height: 40),
@@ -150,18 +151,18 @@ class _GoalCreateViewState extends State<GoalCreateView> {
                         maxLines: 2,
                         decoration: InputDecoration(
                           hintText: '꿈을 향한 여정을 시작하며...',
-                          hintStyle: AppTheme.bodyRegular.copyWith(
+                          hintStyle: AppTheme.handwritingMedium.copyWith(
                             color: AppTheme.textTertiary.withOpacity(0.4),
                           ),
                           filled: true,
-                          fillColor: AppTheme.oatSilk.withOpacity(0.3),
+                          fillColor: AppTheme.ivoryPaper.withOpacity(0.3),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
                         ),
-                        style: AppTheme.bodyMedium.copyWith(
-                          color: AppTheme.textPrimary,
+                        style: AppTheme.handwritingMedium.copyWith(
+                          color: AppTheme.pencilCharcoal,
                         ),
                       ),
                       const SizedBox(height: 40),

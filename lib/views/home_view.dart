@@ -5,8 +5,8 @@ import '../theme/app_theme.dart';
 import '../providers/goal_provider.dart';
 import '../models/goal.dart';
 import '../widgets/analog_widgets.dart';
-import 'archived_goals_view.dart';
 import 'dart:math' as math;
+import 'archived_goals_view.dart';
 import 'goal_create_view.dart';
 import 'detail_view.dart';
 import '../providers/settings_provider.dart';
@@ -71,11 +71,12 @@ class _HomeViewState extends State<HomeView> {
                         );
                       }
 
-                      final goals = data.goals;
-                      final int maxFrameIndex = goals.isNotEmpty
-                          ? goals.map((g) => g.frameIndex).reduce(math.max)
+                      final activeGoals = data.goals.where((g) => g.status == GoalStatus.active).toList();
+                      final int maxFrameIndex = activeGoals.isNotEmpty
+                          ? activeGoals.map((g) => g.frameIndex).reduce((a, b) => a > b ? a : b)
                           : 0;
-                      final int totalFrames = math.max(maxFrameIndex + 2, 2);
+                      // 최소 1개, 목표가 멀리 등록되어 있다면 그에 맞춰 동적 계산
+                      final int totalFrames = math.max(maxFrameIndex + 1, 1);
 
                       return PageView.builder(
                         controller: _pageController,
@@ -91,8 +92,7 @@ class _HomeViewState extends State<HomeView> {
               ),
             ),
 
-            // 페이지 인디케이터
-            const SizedBox(height: 8),
+            // 페이지 인디케이터 (2페이지 이상일 때만 노출)
             ValueListenableBuilder<int>(
               valueListenable: _currentPageNotifier,
               builder: (context, currentPage, _) {
@@ -101,17 +101,20 @@ class _HomeViewState extends State<HomeView> {
                     final maxIdx = provider.goals.isNotEmpty
                         ? provider.goals
                               .map((g) => g.frameIndex)
-                              .reduce(math.max)
+                              .reduce((a, b) => a > b ? a : b)
                         : 0;
-                    return math.max(maxIdx + 2, 2);
+                    return math.max(maxIdx + 1, 1);
                   },
                   builder: (context, totalFrames, _) {
-                    return _buildPageIndicator(totalFrames, currentPage);
+                    if (totalFrames <= 1) return const SizedBox(height: 32);
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: _buildPageIndicator(totalFrames, currentPage),
+                    );
                   },
                 );
               },
             ),
-            const SizedBox(height: 8),
           ],
         ),
       ),
@@ -153,6 +156,11 @@ class _HomeViewState extends State<HomeView> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Bounceable(
+                onTap: () => context.read<GoalProvider>().deleteExtraPageGoals(),
+                child: _buildHeaderButtonIcon(Icons.delete_sweep_outlined),
+              ),
+              const SizedBox(width: 6),
               Bounceable(
                 onTap: () => NotificationService().showImmediateNotification(),
                 child: _buildHeaderButton('Push'),
@@ -198,6 +206,25 @@ class _HomeViewState extends State<HomeView> {
           fontWeight: FontWeight.w700,
         ),
       ),
+    );
+  }
+
+  Widget _buildHeaderButtonIcon(IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: AppTheme.pencilDash.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Icon(icon, size: 20, color: AppTheme.warmBrown),
     );
   }
 

@@ -578,7 +578,7 @@ class _DetailViewState extends State<DetailView>
                                           keyboardType: TextInputType.multiline,
                                           decoration: InputDecoration(
                                             hintText: '오늘의 조각을 기록하세요...',
-                                            hintStyle: AppTheme.bodyRegular
+                                            hintStyle: AppTheme.handwritingMedium
                                                 .copyWith(
                                                   color: themeSet.text
                                                       .withOpacity(0.3),
@@ -589,10 +589,11 @@ class _DetailViewState extends State<DetailView>
                                             isDense: true,
                                             contentPadding: EdgeInsets.zero,
                                           ),
-                                          style: AppTheme.bodyRegular.copyWith(
-                                            color: themeSet.text,
-                                            height: 1.6,
-                                          ),
+                                          style: AppTheme.handwritingMedium
+                                              .copyWith(
+                                                color: themeSet.text,
+                                                height: 1.3,
+                                              ),
                                         ),
                                       ),
                                     ],

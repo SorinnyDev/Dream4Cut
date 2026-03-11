@@ -137,28 +137,30 @@ class AppTheme {
   static const String fontFamily = 'NanumMyeongjo';
 
   // 손글씨 폰트 스타일 (Nanum Pen Script - OFL License)
-  // Baseline 보정: height를 1.0으로 설정하여 상하 여백 최소화
+  // [사용자 입력 전용] - 유저가 직접 작성하는 꿈의 제목, 일기 본문 등에 사용
   static TextStyle handwritingLarge = GoogleFonts.nanumPenScript(
-    fontSize: 24,
-    fontWeight: FontWeight.w400,
-    color: textPrimary,
-    height: 1.0, // 베이스라인 보정
+    fontSize: 28,
+    fontWeight: FontWeight.w500,
+    color: pencilCharcoal,
+    height: 1.1,
   );
 
   static TextStyle handwritingMedium = GoogleFonts.nanumPenScript(
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: FontWeight.w400,
-    color: textPrimary,
-    height: 1.0,
+    color: pencilCharcoal,
+    height: 1.1,
   );
 
   static TextStyle handwritingSmall = GoogleFonts.nanumPenScript(
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: FontWeight.w400,
-    color: textSecondary,
-    height: 1.0,
+    color: warmBrown,
+    height: 1.1,
   );
 
+  // 아날로그 명조 스타일 (NanumMyeongjo)
+  // [앱 시스템 전용] - 질문(Label), 설명(Caption), 제목 등에 사용
   static const TextStyle titleLarge = TextStyle(
     fontFamily: fontFamily,
     fontSize: 28,
