@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
@@ -69,11 +70,13 @@ class NotificationService {
             AndroidFlutterLocalNotificationsPlugin
           >();
 
-      const AndroidNotificationChannel channel = AndroidNotificationChannel(
-        'dream4cut_daily_reminder',
-        '매일 밤 꿈 기록 알림',
+      final AndroidNotificationChannel channel = AndroidNotificationChannel(
+        'dream4cut_daily_reminder_v3', // 진동 패턴 변경 반영을 위해 채널 ID 업서트
+        '매일 밤 꿈 기록 알림 서비스',
         description: '매일 오후 10시에 꿈 기록을 장려하는 알림입니다.',
         importance: Importance.max,
+        enableVibration: true,
+        vibrationPattern: Int64List.fromList([0, 1000, 500, 1000]),
       );
 
       await androidImplementation?.createNotificationChannel(channel);
@@ -152,20 +155,24 @@ class NotificationService {
     final randomIdx = math.Random().nextInt(_randomMessages.length);
     final selectedMessage = _randomMessages[randomIdx];
 
-    const AndroidNotificationDetails androidNotificationDetails =
+    final Int64List vibrationPattern = Int64List.fromList([0, 1000, 500, 1000]);
+
+    final AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
-          'dream4cut_daily_reminder',
-          '매일 밤 꿈 기록 알림',
+          'dream4cut_daily_reminder_v3',
+          '매일 밤 꿈 기록 알림 서비스',
           channelDescription: '매일 오후 10시에 꿈 기록을 장려하는 알림입니다.',
           importance: Importance.max,
           priority: Priority.high,
           visibility: NotificationVisibility.public,
           fullScreenIntent: true, // 잠금화면에서도 잘 보이도록 함
+          vibrationPattern: vibrationPattern,
+          enableVibration: true,
         );
 
-    const NotificationDetails notificationDetails = NotificationDetails(
+    final NotificationDetails notificationDetails = NotificationDetails(
       android: androidNotificationDetails,
-      iOS: DarwinNotificationDetails(
+      iOS: const DarwinNotificationDetails(
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
@@ -220,19 +227,23 @@ class NotificationService {
     final randomIdx = math.Random().nextInt(_randomMessages.length);
     final selectedMessage = _randomMessages[randomIdx];
 
-    const AndroidNotificationDetails androidNotificationDetails =
+    final Int64List vibrationPattern = Int64List.fromList([0, 1000, 500, 1000]);
+
+    final AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
-          'dream4cut_daily_reminder', // 실제 채널 ID와 동일하게 설정하여 테스트
-          '매일 밤 꿈 기록 알림',
+          'dream4cut_daily_reminder_v3', // 실제 채널 ID와 동일하게 설정하여 테스트
+          '매일 밤 꿈 기록 알림 서비스',
           channelDescription: '매일 오후 10시에 꿈 기록을 장려하는 알림입니다.',
           importance: Importance.max,
           priority: Priority.high,
           showWhen: true,
+          vibrationPattern: vibrationPattern,
+          enableVibration: true,
         );
 
-    const NotificationDetails notificationDetails = NotificationDetails(
+    final NotificationDetails notificationDetails = NotificationDetails(
       android: androidNotificationDetails,
-      iOS: DarwinNotificationDetails(),
+      iOS: const DarwinNotificationDetails(),
     );
 
     await flutterLocalNotificationsPlugin.show(
